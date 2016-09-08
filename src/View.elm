@@ -3,7 +3,7 @@ module View exposing (..)
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
 import Html exposing (..)
-import Model exposing (..)
+import Types exposing (..)
 import Math.Vector2 as V exposing (..)
 
 
@@ -15,7 +15,7 @@ getShipPos { pos } =
 view : Model -> Svg Msg
 view model =
     Html.div []
-        [ Svg.svg [ width "400", height "400" ]
+        [ Svg.svg [ width "800", height "600", Svg.Attributes.style "background: grey;" ]
             [ circle [ cx "100", cy "100", r "25" ] []
             , rect
                 [ x (toString <| fst <| getShipPos model.ship)

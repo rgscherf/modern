@@ -1,4 +1,4 @@
-module Model exposing (..)
+module Types exposing (..)
 
 import Math.Vector2 exposing (..)
 
@@ -14,3 +14,4 @@ type alias Model =
 type Msg
     = NoOp
     | Move Ship Vec2
+    | KeyboardEvent Char
