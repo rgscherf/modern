@@ -8,23 +8,13 @@ import Html.Attributes as HA
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
 import Svg.Events as SE
+import Keyboard
+import Char
 
 
-main : Program Never
-main =
-    App.program
-        { init = ( init, Cmd.none )
-        , update = update
-        , subscriptions = subscriptions
-        , view = view
-        }
-
-
-subscriptions : Model -> Sub Msg
-subscriptions _ =
-    Sub.batch
-        [-- Keyboard.presses (\k -> Char.fromCode k |> KeyboardEvent)
-        ]
+--------
+-- TYPES
+--------
 
 
 type alias Model =
@@ -57,6 +47,13 @@ type Msg
     | Move Ship Vec2
     | ClickOnTile Vec2
     | CursorEnterTile Vec2
+    | KeyboardEvent Char
+
+
+
+---------
+-- UPDATE
+---------
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -67,8 +64,28 @@ update msg model =
                 ! []
 
         Move s pt ->
-            { model | playerShip = { pos = pt } }
-                ! []
+            let
+                newX =
+                    (V.getX <| V.add pt s.pos)
+
+                newY =
+                    (V.getY <| V.add pt s.pos)
+
+                moveIsInBounds =
+                    newX
+                        >= 0
+                        && newX
+                        <= (model.tileSize * model.boardSize)
+                        && newY
+                        >= 0
+                        && newY
+                        <= (model.tileSize * model.boardSize)
+            in
+                if moveIsInBounds then
+                    { model | playerShip = { pos = V.vec2 newX newY } }
+                        ! []
+                else
+                    model ! []
 
         ClickOnTile vec ->
             model
@@ -81,10 +98,52 @@ update msg model =
             }
                 ! []
 
+        KeyboardEvent char ->
+            let
+                movePlayer v =
+                    model ! [ C.message <| Move model.playerShip <| V.scale model.tileSize v ]
+            in
+                case char of
+                    'w' ->
+                        movePlayer <| V.vec2 0 (-1)
 
-getShipPos : Ship -> ( Float, Float )
-getShipPos { pos } =
-    ( V.getX pos, V.getY pos )
+                    'a' ->
+                        movePlayer <| V.vec2 (-1) 0
+
+                    's' ->
+                        movePlayer <| V.vec2 0 1
+
+                    'd' ->
+                        movePlayer <| V.vec2 1 0
+
+                    _ ->
+                        model ! []
+
+
+
+-------
+-- VIEW
+-------
+
+
+view : Model -> Svg Msg
+view model =
+    let
+        gameSizeStr =
+            toString <| model.boardSize * model.tileSize
+    in
+        Html.div []
+            [ Html.div [ HA.style [ ( "display", "flex" ), ( "flex-direction", "row" ) ] ]
+                [ Svg.svg
+                    [ width gameSizeStr, height gameSizeStr ]
+                  <|
+                    List.append (makeMapTiles model) (renderPlayer model)
+                , Html.div
+                    [ HA.style [ ( "width", "400px" ), ( "background", "LightSlateGrey" ) ] ]
+                    [ text "Hello world" ]
+                ]
+            , Html.div [] [ text <| toString model ]
+            ]
 
 
 makeMapCoords : Float -> Float -> List (Vec2)
@@ -121,7 +180,8 @@ makeOneRect model pos =
             "Salmon"
 
         highligtedOutOfRangeColor =
-            "LightSlateGrey"
+            -- darker than royal blue
+            "#2251dd"
 
         isInRange =
             V.distance model.playerShip.pos pos <= (model.tileSize * model.playerMovementRange)
@@ -154,24 +214,9 @@ makeOneRect model pos =
             []
 
 
-view : Model -> Svg Msg
-view model =
-    let
-        gameSizeStr =
-            toString <| model.boardSize * model.tileSize
-    in
-        Html.div []
-            [ Html.div [ HA.style [ ( "display", "flex" ), ( "flex-direction", "row" ) ] ]
-                [ Svg.svg
-                    [ width gameSizeStr, height gameSizeStr ]
-                  <|
-                    List.append (makeMapTiles model) (renderPlayer model)
-                , Html.div
-                    [ HA.style [ ( "width", "400px" ), ( "background", "LightSlateGrey" ) ] ]
-                    [ text "Hello world" ]
-                ]
-            , Html.div [] [ text <| toString model ]
-            ]
+getShipPos : Ship -> ( Float, Float )
+getShipPos { pos } =
+    ( V.getX pos, V.getY pos )
 
 
 renderPlayer : Model -> List (Svg a)
@@ -185,3 +230,26 @@ renderPlayer model =
         ]
         []
     ]
+
+
+
+-------
+-- MAIN
+-------
+
+
+main : Program Never
+main =
+    App.program
+        { init = ( init, Cmd.none )
+        , update = update
+        , subscriptions = subscriptions
+        , view = view
+        }
+
+
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    Sub.batch
+        [ Keyboard.presses (\k -> Char.fromCode k |> KeyboardEvent)
+        ]
