@@ -114,7 +114,8 @@ makeOneRect model pos =
             "RoyalBlue"
 
         notHighligtedButInRange =
-            "Blue"
+            -- 10% lighter than royal blue
+            "#4f74e3"
 
         highlightedInRangeColor =
             "Salmon"
