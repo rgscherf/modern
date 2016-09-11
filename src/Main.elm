@@ -23,7 +23,8 @@ type alias Model =
     , tileSize : Float
     , boardSize : Float
     , currentlyHighlightedTile : Vec2
-    , debugRangeToTile : ( Float, Float )
+    , enemies : List Ship
+    , enemySpawnCountdown : Int
     }
 
 
@@ -34,7 +35,8 @@ init =
     , tileSize = 30
     , boardSize = 24
     , currentlyHighlightedTile = V.vec2 0 0
-    , debugRangeToTile = ( 0, 0 )
+    , enemies = []
+    , enemySpawnCountdown = 3
     }
 
 
@@ -75,15 +77,22 @@ update msg model =
                     newX
                         >= 0
                         && newX
-                        <= (model.tileSize * model.boardSize)
+                        < (model.tileSize * model.boardSize)
                         && newY
                         >= 0
                         && newY
-                        <= (model.tileSize * model.boardSize)
+                        < (model.tileSize * model.boardSize)
             in
                 if moveIsInBounds then
-                    { model | playerShip = { pos = V.vec2 newX newY } }
-                        ! []
+                    { model
+                        | playerShip = { pos = V.vec2 newX newY }
+                        , enemySpawnCountdown = model.enemySpawnCountdown - 1
+                    }
+                        ! (if model.enemySpawnCountdown == 0 then
+                            []
+                           else
+                            []
+                          )
                 else
                     model ! []
 
@@ -92,10 +101,7 @@ update msg model =
                 ! [ C.message <| Move model.playerShip vec ]
 
         CursorEnterTile vec ->
-            { model
-                | currentlyHighlightedTile = vec
-                , debugRangeToTile = ( V.distance model.playerShip.pos vec, model.tileSize * model.playerMovementRange )
-            }
+            { model | currentlyHighlightedTile = vec }
                 ! []
 
         KeyboardEvent char ->
@@ -115,6 +121,18 @@ update msg model =
 
                     'd' ->
                         movePlayer <| V.vec2 1 0
+
+                    'q' ->
+                        movePlayer <| V.vec2 (-1) (-1)
+
+                    'e' ->
+                        movePlayer <| V.vec2 1 (-1)
+
+                    'z' ->
+                        movePlayer <| V.vec2 (-1) 1
+
+                    'c' ->
+                        movePlayer <| V.vec2 1 1
 
                     _ ->
                         model ! []
@@ -206,8 +224,6 @@ makeOneRect model pos =
             , fill <| tileColor
             , width <| toString model.tileSize
             , height <| toString model.tileSize
-            , stroke "Teal"
-            , strokeWidth "1px"
             , SE.onClick <| ClickOnTile pos
             , SE.onMouseOver <| CursorEnterTile pos
             ]

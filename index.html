@@ -9142,21 +9142,6 @@ var _shmookey$cmd_extra$Cmd_Extra$message = function (x) {
 		_elm_lang$core$Basics$identity,
 		_elm_lang$core$Task$succeed(x));
 };
-var _rgscherf$modern$Main$makeMapCoords = F2(
-	function (boardSize, tileSize) {
-		return _elm_lang$core$List$concat(
-			A2(
-				_elm_lang$core$List$map,
-				function (x) {
-					return A2(
-						_elm_lang$core$List$map,
-						function (y) {
-							return A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, x * tileSize, y * tileSize);
-						},
-						_elm_lang$core$Native_List.range(0, boardSize));
-				},
-				_elm_lang$core$Native_List.range(0, boardSize)));
-	});
 var _rgscherf$modern$Main$getShipPos = function (_p0) {
 	var _p1 = _p0;
 	var _p2 = _p1.pos;
@@ -9191,9 +9176,24 @@ var _rgscherf$modern$Main$renderPlayer = function (model) {
 				[]))
 		]);
 };
-var _rgscherf$modern$Main$Model = F6(
-	function (a, b, c, d, e, f) {
-		return {playerShip: a, playerMovementRange: b, tileSize: c, boardSize: d, currentlyHighlightedTile: e, debugRangeToTile: f};
+var _rgscherf$modern$Main$makeMapCoords = F2(
+	function (boardSize, tileSize) {
+		return _elm_lang$core$List$concat(
+			A2(
+				_elm_lang$core$List$map,
+				function (x) {
+					return A2(
+						_elm_lang$core$List$map,
+						function (y) {
+							return A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, x * tileSize, y * tileSize);
+						},
+						_elm_lang$core$Native_List.range(0, boardSize));
+				},
+				_elm_lang$core$Native_List.range(0, boardSize)));
+	});
+var _rgscherf$modern$Main$Model = F5(
+	function (a, b, c, d, e) {
+		return {playerShip: a, playerMovementRange: b, tileSize: c, boardSize: d, currentlyHighlightedTile: e};
 	});
 var _rgscherf$modern$Main$Ship = function (a) {
 	return {pos: a};
@@ -9204,8 +9204,7 @@ var _rgscherf$modern$Main$init = {
 	playerMovementRange: 2,
 	tileSize: 30,
 	boardSize: 24,
-	currentlyHighlightedTile: A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, 0, 0),
-	debugRangeToTile: {ctor: '_Tuple2', _0: 0, _1: 0}
+	currentlyHighlightedTile: A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, 0, 0)
 };
 var _rgscherf$modern$Main$KeyboardEvent = function (a) {
 	return {ctor: 'KeyboardEvent', _0: a};
@@ -9252,8 +9251,6 @@ var _rgscherf$modern$Main$makeOneRect = F2(
 					_elm_lang$core$Basics$toString(model.tileSize)),
 					_elm_lang$svg$Svg_Attributes$height(
 					_elm_lang$core$Basics$toString(model.tileSize)),
-					_elm_lang$svg$Svg_Attributes$stroke('Teal'),
-					_elm_lang$svg$Svg_Attributes$strokeWidth('1px'),
 					_elm_lang$svg$Svg_Events$onClick(
 					_rgscherf$modern$Main$ClickOnTile(pos)),
 					_elm_lang$svg$Svg_Events$onMouseOver(
@@ -9349,7 +9346,7 @@ var _rgscherf$modern$Main$update = F2(
 					A2(_elm_community$elm_linear_algebra$Math_Vector2$add, _p5, _p6.pos));
 				var newX = _elm_community$elm_linear_algebra$Math_Vector2$getX(
 					A2(_elm_community$elm_linear_algebra$Math_Vector2$add, _p5, _p6.pos));
-				var moveIsInBounds = (_elm_lang$core$Native_Utils.cmp(newX, 0) > -1) && ((_elm_lang$core$Native_Utils.cmp(newX, model.tileSize * model.boardSize) < 1) && ((_elm_lang$core$Native_Utils.cmp(newY, 0) > -1) && (_elm_lang$core$Native_Utils.cmp(newY, model.tileSize * model.boardSize) < 1)));
+				var moveIsInBounds = (_elm_lang$core$Native_Utils.cmp(newX, 0) > -1) && ((_elm_lang$core$Native_Utils.cmp(newX, model.tileSize * model.boardSize) < 0) && ((_elm_lang$core$Native_Utils.cmp(newY, 0) > -1) && (_elm_lang$core$Native_Utils.cmp(newY, model.tileSize * model.boardSize) < 0)));
 				return moveIsInBounds ? A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
@@ -9375,19 +9372,11 @@ var _rgscherf$modern$Main$update = F2(
 							A2(_rgscherf$modern$Main$Move, model.playerShip, _p4._0))
 						]));
 			case 'CursorEnterTile':
-				var _p7 = _p4._0;
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
 						model,
-						{
-							currentlyHighlightedTile: _p7,
-							debugRangeToTile: {
-								ctor: '_Tuple2',
-								_0: A2(_elm_community$elm_linear_algebra$Math_Vector2$distance, model.playerShip.pos, _p7),
-								_1: model.tileSize * model.playerMovementRange
-							}
-						}),
+						{currentlyHighlightedTile: _p4._0}),
 					_elm_lang$core$Native_List.fromArray(
 						[]));
 			default:
@@ -9404,8 +9393,8 @@ var _rgscherf$modern$Main$update = F2(
 									A2(_elm_community$elm_linear_algebra$Math_Vector2$scale, model.tileSize, v)))
 							]));
 				};
-				var _p8 = _p4._0;
-				switch (_p8.valueOf()) {
+				var _p7 = _p4._0;
+				switch (_p7.valueOf()) {
 					case 'w':
 						return movePlayer(
 							A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, 0, -1));
@@ -9418,6 +9407,18 @@ var _rgscherf$modern$Main$update = F2(
 					case 'd':
 						return movePlayer(
 							A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, 1, 0));
+					case 'q':
+						return movePlayer(
+							A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, -1, -1));
+					case 'e':
+						return movePlayer(
+							A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, 1, -1));
+					case 'z':
+						return movePlayer(
+							A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, -1, 1));
+					case 'c':
+						return movePlayer(
+							A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, 1, 1));
 					default:
 						return A2(
 							_elm_lang$core$Platform_Cmd_ops['!'],
