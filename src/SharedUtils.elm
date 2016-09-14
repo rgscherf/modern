@@ -10,15 +10,15 @@ import Math.Vector2 as V exposing (Vec2)
             if ind' <= 0 then
                 List.head l'
             else
-                go (Maybe.withDefault [] (List.tail l')) (ind' - 1)
+                go (Maybe.withDefault [] <| List.tail l') (ind' - 1)
     in
         go l ind
 infixr 1 !!
 
 
-makeMapCoords : Float -> Float -> List (Vec2)
-makeMapCoords boardSize tileSize =
+makeMapCoords : Float -> List (Vec2)
+makeMapCoords boardSize =
     List.concat <|
         List.map
-            (\x -> List.map (\y -> V.vec2 (x * tileSize) (y * tileSize)) [0..boardSize])
+            (\x -> List.map (\y -> V.vec2 x y) [0..boardSize])
             [0..boardSize]

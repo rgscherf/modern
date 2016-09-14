@@ -12,9 +12,9 @@ import Svg.Events as SE
 
 queryMouseHighlight : Model -> Vec2 -> TerrainType
 queryMouseHighlight model vec =
-    if vec == model.playerShip.pos then
+    if V.scale model.tileSize vec == model.playerShip.pos then
         Player
-    else if List.member vec (List.map .pos model.enemies) then
+    else if List.member (V.scale model.tileSize vec) (List.map .pos model.enemies) then
         Enemy
     else
         Sea
@@ -73,8 +73,8 @@ renderEnemy tileSize { pos } =
             V.toRecord pos
     in
         rect
-            [ x <| toString pos'.x
-            , y <| toString pos'.y
+            [ x <| toString <| pos'.x * tileSize
+            , y <| toString <| pos'.y * tileSize
             , fill <| "Red"
             , width <| toString tileSize
             , height <| toString tileSize
@@ -87,7 +87,7 @@ makeMapTiles : Model -> List (Svg Msg)
 makeMapTiles model =
     let
         boardCoords =
-            makeMapCoords model.boardSize model.tileSize
+            makeMapCoords model.boardSize
     in
         List.map (makeOneRect model) boardCoords
 
@@ -130,8 +130,8 @@ makeOneRect model pos =
                 notHighlightedColor
     in
         rect
-            [ x <| toString pos'.x
-            , y <| toString pos'.y
+            [ x <| toString <| pos'.x * model.tileSize
+            , y <| toString <| pos'.y * model.tileSize
             , fill <| tileColor
             , width <| toString model.tileSize
             , height <| toString model.tileSize
@@ -148,8 +148,8 @@ getShipPos { pos } =
 renderPlayer : Model -> List (Svg Msg)
 renderPlayer model =
     [ rect
-        [ x (toString <| fst <| getShipPos model.playerShip)
-        , y (toString <| snd <| getShipPos model.playerShip)
+        [ x (toString <| (\a -> a * model.tileSize) <| fst <| getShipPos model.playerShip)
+        , y (toString <| (\a -> a * model.tileSize) <| snd <| getShipPos model.playerShip)
         , fill "Aquamarine"
         , width <| toString model.tileSize
         , height <| toString model.tileSize
