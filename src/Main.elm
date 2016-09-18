@@ -58,7 +58,6 @@ type TerrainType
 type Msg
     = NoOp
     | Move Ship Vec2
-    | ClickOnTile Vec2
     | CursorEnterTile Vec2
     | KeyboardEvent Char
     | SpawnEnemy
@@ -111,20 +110,17 @@ fromPosition ( x, y ) =
 
 
 movesFrom : Model -> Position -> Set Position
-movesFrom model p =
+movesFrom model ( x, y ) =
     let
-        v =
-            fromPosition p
-
-        positions =
-            [ V.vec2 (-1) 0
-            , V.vec2 0 (-1)
-            , V.vec2 0 1
-            , V.vec2 1 0
+        positions' =
+            [ ( x + 1, y )
+            , ( x - 1, y )
+            , ( x, y - 1 )
+            , ( x, y + 1 )
             ]
     in
-        List.map (\t -> V.add v t) positions
-            |> List.filter (tileIsNotBlocked model)
+        positions'
+            |> List.map fromPosition
             |> List.filter (tileIsInBounds model)
             |> List.map toPosition
             |> Set.fromList
@@ -132,17 +128,17 @@ movesFrom model p =
 
 tileIsInBounds : Model -> Vec2 -> Bool
 tileIsInBounds model v =
-    V.getX v > 0 && V.getX v < model.boardSize && V.getY v > 0 && V.getY v < model.boardSize
+    (V.getX v > 0) && (V.getX v < model.boardSize) && (V.getY v > 0) && (V.getY v < model.boardSize)
 
 
 gridMoveCost : Position -> Position -> Float
-gridMoveCost p p' =
+gridMoveCost ( x, y ) ( x', y' ) =
     let
         xdist =
-            abs <| (fst p) - (fst p')
+            abs <| (x - x')
 
         ydist =
-            abs <| (snd p) - (snd p')
+            abs <| (y - y')
     in
         toFloat <| xdist + ydist
 
@@ -159,15 +155,21 @@ nextMove model origin target =
 updateMoveSingleEnememy : Model -> Ship -> Ship
 updateMoveSingleEnememy model ship =
     let
-        positions =
-            Debug.log "path to target..." <| nextMove model ship.pos model.playerShip.pos
+        nm =
+            nextMove model ship.pos model.playerShip.pos
 
         newPos =
-            positions
-                |> Maybe.withDefault []
-                |> List.head
-                |> Maybe.withDefault (toPosition ship.pos)
-                |> fromPosition
+            case (Debug.log "move steps " nm) of
+                Nothing ->
+                    ship.pos
+
+                Just path ->
+                    case List.head path of
+                        Nothing ->
+                            ship.pos
+
+                        Just p ->
+                            fromPosition p
     in
         { pos = newPos }
 
@@ -213,7 +215,9 @@ update msg model =
                         , enemySpawnCountdown = model.enemySpawnCountdown - 1
                     }
                         ! (if model.enemySpawnCountdown == 0 then
-                            [ C.message SpawnEnemy, C.message MoveEnemies ]
+                            [ C.message MoveEnemies
+                            , C.message SpawnEnemy
+                            ]
                            else
                             [ C.message MoveEnemies ]
                           )
@@ -231,10 +235,6 @@ update msg model =
                     , randomSeed = newSeed
                 }
                     ! []
-
-        ClickOnTile vec ->
-            model
-                ! [ C.message <| Move model.playerShip vec ]
 
         CursorEnterTile vec ->
             { model | currentlyHighlightedTile = vec }
