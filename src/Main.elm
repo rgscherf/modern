@@ -13,16 +13,22 @@ import Set exposing (Set)
 --------
 
 
-type alias Model =
-    { playerShip : Ship
-    , playerMovementRange : Float
-    , tileSize : Float
+type alias Config =
+    { tileSize : Float
     , boardSize : Float
-    , currentlyHighlightedTile : Vec2
-    , enemies : List Ship
-    , enemySpawnCountdown : Int
     , randomSeed : Seed
     , timeBetweenEnemySpawns : Int
+    }
+
+
+type alias Model =
+    { config : Config
+    , playerShip : Ship
+    , playerMovementRange : Float
+    , currentlyHighlightedTile : Vec2
+    , enemies : List Ship
+    , islands : List Island
+    , enemySpawnCountdown : Int
     }
 
 
@@ -32,20 +38,31 @@ type alias InitFlags =
 
 init : InitFlags -> ( Model, Cmd Msg )
 init { startTime } =
-    { playerShip = Ship <| V.vec2 0 0
+    { config = initConfig startTime
+    , playerShip = Ship <| V.vec2 0 0
     , playerMovementRange = 2
-    , tileSize = 30
-    , boardSize = 24
     , currentlyHighlightedTile = V.vec2 0 0
     , enemies = []
+    , islands = []
     , enemySpawnCountdown = 3
-    , randomSeed = Random.initialSeed startTime
-    , timeBetweenEnemySpawns = 3
     }
         ! []
 
 
+initConfig : Int -> Config
+initConfig startTime =
+    { tileSize = 30
+    , boardSize = 24
+    , randomSeed = Random.initialSeed startTime
+    , timeBetweenEnemySpawns = 3
+    }
+
+
 type alias Ship =
+    { pos : Vec2 }
+
+
+type alias Island =
     { pos : Vec2 }
 
 
@@ -53,6 +70,7 @@ type TerrainType
     = Sea
     | Player
     | Enemy
+    | Land
 
 
 type Msg
@@ -74,14 +92,14 @@ spawnNewEnemy : Model -> ( Ship, Seed )
 spawnNewEnemy model =
     let
         allFreeCoords =
-            makeMapCoords model.boardSize
+            makeMapCoords model.config.boardSize
                 |> List.filter (tileIsNotBlocked model)
 
         generator =
             Random.int 0 ((List.length allFreeCoords) - 1)
 
         ( pickedIndex, newSeed ) =
-            Random.step generator model.randomSeed
+            Random.step generator model.config.randomSeed
 
         newShipPos =
             Maybe.withDefault (V.vec2 0 0) (allFreeCoords !! pickedIndex)
@@ -121,14 +139,14 @@ movesFrom model ( x, y ) =
     in
         positions'
             |> List.map fromPosition
-            |> List.filter (tileIsInBounds model)
+            |> List.filter (tileIsInBounds model.config)
             |> List.map toPosition
             |> Set.fromList
 
 
-tileIsInBounds : Model -> Vec2 -> Bool
-tileIsInBounds model v =
-    (V.getX v > 0) && (V.getX v < model.boardSize) && (V.getY v > 0) && (V.getY v < model.boardSize)
+tileIsInBounds : Config -> Vec2 -> Bool
+tileIsInBounds cfg v =
+    (V.getX v > 0) && (V.getX v < cfg.boardSize) && (V.getY v > 0) && (V.getY v < cfg.boardSize)
 
 
 gridMoveCost : Position -> Position -> Float
@@ -159,7 +177,7 @@ updateMoveSingleEnememy model ship =
             nextMove model ship.pos model.playerShip.pos
 
         newPos =
-            case (Debug.log "move steps " nm) of
+            case nm of
                 Nothing ->
                     ship.pos
 
@@ -200,11 +218,11 @@ update msg model =
                     newX
                         >= 0
                         && newX
-                        < model.boardSize
+                        < model.config.boardSize
                         && newY
                         >= 0
                         && newY
-                        < model.boardSize
+                        < model.config.boardSize
 
                 newVec =
                     V.vec2 newX newY
@@ -228,11 +246,17 @@ update msg model =
             let
                 ( newShip, newSeed ) =
                     spawnNewEnemy model
+
+                config =
+                    model.config
+
+                config' =
+                    { config | randomSeed = newSeed }
             in
                 { model
-                    | enemySpawnCountdown = model.timeBetweenEnemySpawns
+                    | enemySpawnCountdown = model.config.timeBetweenEnemySpawns
                     , enemies = newShip :: model.enemies
-                    , randomSeed = newSeed
+                    , config = config'
                 }
                     ! []
 

@@ -12,9 +12,9 @@ import Svg.Events as SE
 
 queryMouseHighlight : Model -> Vec2 -> TerrainType
 queryMouseHighlight model vec =
-    if V.scale model.tileSize vec == model.playerShip.pos then
+    if V.scale model.config.tileSize vec == model.playerShip.pos then
         Player
-    else if List.member (V.scale model.tileSize vec) (List.map .pos model.enemies) then
+    else if List.member (V.scale model.config.tileSize vec) (List.map .pos model.enemies) then
         Enemy
     else
         Sea
@@ -38,12 +38,15 @@ fillMouseInfoDiv terr =
         Sea ->
             MouseInfoDivPackage "Open sea" "Nothing to see..."
 
+        Land ->
+            MouseInfoDivPackage "Land ho!" "What might be buried here?"
+
 
 view : Model -> Svg Msg
 view model =
     let
         gameSizeStr =
-            toString <| model.boardSize * model.tileSize
+            toString <| model.config.boardSize * model.config.tileSize
 
         mouseDivPackage =
             fillMouseInfoDiv <| queryMouseHighlight model model.currentlyHighlightedTile
@@ -54,7 +57,7 @@ view model =
                     [ width gameSizeStr, height gameSizeStr ]
                   <|
                     (makeMapTiles model)
-                        ++ (List.map (renderEnemy model.tileSize) model.enemies)
+                        ++ (List.map (renderEnemy model.config.tileSize) model.enemies)
                         ++ (renderPlayer model)
                 , Html.div
                     [ HA.style [ ( "width", "400px" ), ( "background", "LightSlateGrey" ) ] ]
@@ -87,7 +90,7 @@ makeMapTiles : Model -> List (Svg Msg)
 makeMapTiles model =
     let
         boardCoords =
-            makeMapCoords model.boardSize
+            makeMapCoords model.config.boardSize
     in
         List.map (makeOneRect model) boardCoords
 
@@ -113,7 +116,7 @@ makeOneRect model pos =
             "#2251dd"
 
         isInRange =
-            V.distance model.playerShip.pos pos <= (model.tileSize * model.playerMovementRange)
+            V.distance model.playerShip.pos pos <= (model.config.tileSize * model.playerMovementRange)
 
         isHighligtedTile =
             model.currentlyHighlightedTile == pos
@@ -130,11 +133,11 @@ makeOneRect model pos =
                 notHighlightedColor
     in
         rect
-            [ x <| toString <| pos'.x * model.tileSize
-            , y <| toString <| pos'.y * model.tileSize
+            [ x <| toString <| pos'.x * model.config.tileSize
+            , y <| toString <| pos'.y * model.config.tileSize
             , fill <| tileColor
-            , width <| toString model.tileSize
-            , height <| toString model.tileSize
+            , width <| toString model.config.tileSize
+            , height <| toString model.config.tileSize
             , SE.onMouseOver <| CursorEnterTile pos
             ]
             []
@@ -148,11 +151,11 @@ getShipPos { pos } =
 renderPlayer : Model -> List (Svg Msg)
 renderPlayer model =
     [ rect
-        [ x (toString <| (\a -> a * model.tileSize) <| fst <| getShipPos model.playerShip)
-        , y (toString <| (\a -> a * model.tileSize) <| snd <| getShipPos model.playerShip)
+        [ x (toString <| (\a -> a * model.config.tileSize) <| fst <| getShipPos model.playerShip)
+        , y (toString <| (\a -> a * model.config.tileSize) <| snd <| getShipPos model.playerShip)
         , fill "Aquamarine"
-        , width <| toString model.tileSize
-        , height <| toString model.tileSize
+        , width <| toString model.config.tileSize
+        , height <| toString model.config.tileSize
         , SE.onMouseOver <| CursorEnterTile model.playerShip.pos
         ]
         []
