@@ -39,11 +39,12 @@ type alias InitFlags =
 init : InitFlags -> ( Model, Cmd Msg )
 init { startTime } =
     { config = initConfig startTime
-    , playerShip = Entity (V.vec2 0 0) Ship
+    , playerShip = Entity (V.vec2 0 0) Ship 0
     , playerMovementRange = 2
     , currentlyHighlightedTile = V.vec2 0 0
     , entities = []
     , enemySpawnCountdown = 3
+    , entityId = 1
     }
         ! []
 
@@ -57,16 +58,10 @@ initConfig startTime =
     }
 
 
-
--- type alias Ship =
---     { pos : Vec2 }
--- type alias Island =
---     { pos : Vec2 }
-
-
 type alias Entity =
     { pos : Vec2
     , entType : EntityType
+    , entId : Int
     }
 
 
@@ -97,12 +92,12 @@ type Msg
 ---------
 
 
-spawnNewEnemy : Model -> ( Entity, Seed )
+spawnNewEnemy : Model -> ( Entity, Seed, Int )
 spawnNewEnemy model =
     let
         allFreeCoords =
             makeMapCoords model.config.boardSize
-                |> List.filter (not << isTileBlocked model)
+                |> List.filter (not << isTileOccupied model Nothing)
 
         generator =
             Random.int 0 ((List.length allFreeCoords) - 1)
@@ -113,21 +108,24 @@ spawnNewEnemy model =
         newShipPos =
             Maybe.withDefault (V.vec2 0 0) (allFreeCoords !! pickedIndex)
     in
-        ( { pos = newShipPos, entType = Ship }, newSeed )
+        ( { pos = newShipPos, entType = Ship, entId = model.entityId }, newSeed, model.entityId + 1 )
 
 
-allObjectPositions : Model -> List Vec2
-allObjectPositions model =
-    List.map .pos <| model.playerShip :: model.entities
-
-
-isTileBlocked : Model -> Vec2 -> Bool
-isTileBlocked model vec =
+isTileOccupied : Model -> Maybe Entity -> Vec2 -> Bool
+isTileOccupied model mightBeMovingEntity vec =
     -- issue is that we block because the tile the object occupies,
     -- is occupied
     -- need to implement object IDs
-    allObjectPositions model
-        |> List.member vec
+    case mightBeMovingEntity of
+        Nothing ->
+            (model.playerShip :: model.entities)
+                |> List.map .pos
+                |> List.member vec
+
+        Just ent ->
+            List.filter (\a -> a.entId /= ent.entId) (model.playerShip :: model.entities)
+                |> List.map .pos
+                |> List.member vec
 
 
 toPosition : Vec2 -> ( Int, Int )
@@ -141,8 +139,8 @@ fromPosition ( x, y ) =
     V.vec2 (toFloat x) (toFloat y)
 
 
-movesFrom : Model -> Position -> Set Position
-movesFrom model ( x, y ) =
+movesFrom : Model -> Entity -> Position -> Set Position
+movesFrom model ent ( x, y ) =
     let
         positions' =
             [ ( x + 1, y )
@@ -154,7 +152,7 @@ movesFrom model ( x, y ) =
         positions'
             |> List.map fromPosition
             |> List.filter (tileIsInBounds model.config)
-            |> List.filter (not << isTileBlocked model)
+            |> List.filter (not << isTileOccupied model (Just ent))
             |> List.map toPosition
             |> Set.fromList
 
@@ -177,49 +175,54 @@ gridMoveCost ( x, y ) ( x', y' ) =
 
 
 updateEnemies : Model -> List Entity -> List Entity -> List Entity
-updateEnemies model updatedEnemies notUpdatedEnemies =
-    case notUpdatedEnemies of
+updateEnemies model updatedEntities notUpdateEntities =
+    case notUpdateEntities of
         [] ->
-            updatedEnemies
+            updatedEntities
 
         x :: xs ->
             let
                 newModel =
-                    { model | enemies = updatedEnemies ++ notUpdatedEnemies }
+                    { model | entities = updatedEntities ++ notUpdateEntities }
             in
                 updateEnemies
                     newModel
-                    (moveSingleEnemy newModel x :: updatedEnemies)
+                    (moveSingleEnemy newModel x :: updatedEntities)
                     xs
 
 
 moveSingleEnemy : Model -> Entity -> Entity
-moveSingleEnemy model ship =
-    let
-        nm =
-            nextMove model ship.pos model.playerShip.pos
+moveSingleEnemy model entity =
+    case entity.entType of
+        LandEntity ->
+            entity
 
-        newPos =
-            case nm of
-                Nothing ->
-                    ship.pos
+        Ship ->
+            let
+                nm =
+                    nextMove model entity entity.pos model.playerShip.pos
 
-                Just path ->
-                    case List.head path of
+                newPos =
+                    case nm of
                         Nothing ->
-                            ship.pos
+                            entity.pos
 
-                        Just p ->
-                            fromPosition p
-    in
-        { pos = newPos }
+                        Just path ->
+                            case List.head path of
+                                Nothing ->
+                                    entity.pos
+
+                                Just p ->
+                                    fromPosition p
+            in
+                { entity | pos = newPos }
 
 
-nextMove : Model -> Vec2 -> Vec2 -> Maybe (List Position)
-nextMove model origin target =
+nextMove : Model -> Entity -> Vec2 -> Vec2 -> Maybe (List Position)
+nextMove model entity origin target =
     AStar.findPath
         gridMoveCost
-        (movesFrom model)
+        (movesFrom model entity)
         (toPosition origin)
         (toPosition target)
 
@@ -232,7 +235,7 @@ update msg model =
                 ! []
 
         MoveEnemies ->
-            { model | enemies = updateEnemies model [] model.enemies }
+            { model | entities = updateEnemies model [] model.entities }
                 ! []
 
         Move s pt ->
@@ -256,9 +259,10 @@ update msg model =
                 newVec =
                     V.vec2 newX newY
             in
-                if moveIsInBounds && (not <| isTileBlocked model newVec) then
+                if moveIsInBounds && (not <| isTileOccupied model Nothing newVec) then
                     { model
-                        | playerShip = { pos = newVec }
+                      -- just update playership with new entity
+                        | playerShip = Entity newVec Ship model.playerShip.entId
                         , enemySpawnCountdown = model.enemySpawnCountdown - 1
                     }
                         ! (if model.enemySpawnCountdown == 0 then
@@ -273,7 +277,7 @@ update msg model =
 
         SpawnEnemy ->
             let
-                ( newShip, newSeed ) =
+                ( newShip, newSeed, newEntityId ) =
                     spawnNewEnemy model
 
                 config =
@@ -284,8 +288,9 @@ update msg model =
             in
                 { model
                     | enemySpawnCountdown = model.config.timeBetweenEnemySpawns
-                    , enemies = newShip :: model.enemies
+                    , entities = newShip :: model.entities
                     , config = config'
+                    , entityId = newEntityId
                 }
                     ! []
 

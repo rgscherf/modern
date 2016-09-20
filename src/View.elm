@@ -14,7 +14,7 @@ queryMouseHighlight : Model -> Vec2 -> TerrainType
 queryMouseHighlight model vec =
     if V.scale model.config.tileSize vec == model.playerShip.pos then
         Player
-    else if List.member (V.scale model.config.tileSize vec) (List.map .pos model.enemies) then
+    else if List.member (V.scale model.config.tileSize vec) (List.map .pos model.entities) then
         Enemy
     else
         Sea
@@ -57,7 +57,7 @@ view model =
                     [ width gameSizeStr, height gameSizeStr ]
                   <|
                     (makeMapTiles model)
-                        ++ (List.map (renderEnemy model.config.tileSize) model.enemies)
+                        ++ (List.map (renderEnemy model.config.tileSize) model.entities)
                         ++ (renderPlayer model)
                 , Html.div
                     [ HA.style [ ( "width", "400px" ), ( "background", "LightSlateGrey" ) ] ]
@@ -69,7 +69,7 @@ view model =
             ]
 
 
-renderEnemy : Float -> Ship -> Svg Msg
+renderEnemy : Float -> Entity -> Svg Msg
 renderEnemy tileSize { pos } =
     let
         pos' =
@@ -143,7 +143,7 @@ makeOneRect model pos =
             []
 
 
-getShipPos : Ship -> ( Float, Float )
+getShipPos : Entity -> ( Float, Float )
 getShipPos { pos } =
     ( V.getX pos, V.getY pos )
 
