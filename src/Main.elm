@@ -23,12 +23,12 @@ type alias Config =
 
 type alias Model =
     { config : Config
-    , playerShip : Ship
+    , playerShip : Entity
     , playerMovementRange : Float
     , currentlyHighlightedTile : Vec2
-    , enemies : List Ship
-    , islands : List Island
+    , entities : List Entity
     , enemySpawnCountdown : Int
+    , entityId : Int
     }
 
 
@@ -39,11 +39,10 @@ type alias InitFlags =
 init : InitFlags -> ( Model, Cmd Msg )
 init { startTime } =
     { config = initConfig startTime
-    , playerShip = Ship <| V.vec2 0 0
+    , playerShip = Entity (V.vec2 0 0) Ship
     , playerMovementRange = 2
     , currentlyHighlightedTile = V.vec2 0 0
-    , enemies = []
-    , islands = []
+    , entities = []
     , enemySpawnCountdown = 3
     }
         ! []
@@ -58,12 +57,22 @@ initConfig startTime =
     }
 
 
-type alias Ship =
-    { pos : Vec2 }
+
+-- type alias Ship =
+--     { pos : Vec2 }
+-- type alias Island =
+--     { pos : Vec2 }
 
 
-type alias Island =
-    { pos : Vec2 }
+type alias Entity =
+    { pos : Vec2
+    , entType : EntityType
+    }
+
+
+type EntityType
+    = Ship
+    | LandEntity
 
 
 type TerrainType
@@ -75,7 +84,7 @@ type TerrainType
 
 type Msg
     = NoOp
-    | Move Ship Vec2
+    | Move Entity Vec2
     | CursorEnterTile Vec2
     | KeyboardEvent Char
     | SpawnEnemy
@@ -88,12 +97,12 @@ type Msg
 ---------
 
 
-spawnNewEnemy : Model -> ( Ship, Seed )
+spawnNewEnemy : Model -> ( Entity, Seed )
 spawnNewEnemy model =
     let
         allFreeCoords =
             makeMapCoords model.config.boardSize
-                |> List.filter (tileIsNotBlocked model)
+                |> List.filter (not << isTileBlocked model)
 
         generator =
             Random.int 0 ((List.length allFreeCoords) - 1)
@@ -104,16 +113,21 @@ spawnNewEnemy model =
         newShipPos =
             Maybe.withDefault (V.vec2 0 0) (allFreeCoords !! pickedIndex)
     in
-        ( { pos = newShipPos }, newSeed )
+        ( { pos = newShipPos, entType = Ship }, newSeed )
 
 
-tileIsNotBlocked : Model -> Vec2 -> Bool
-tileIsNotBlocked model vec =
-    let
-        entityPositions =
-            model.playerShip.pos :: (List.map .pos model.enemies)
-    in
-        not <| List.member vec entityPositions
+allObjectPositions : Model -> List Vec2
+allObjectPositions model =
+    List.map .pos <| model.playerShip :: model.entities
+
+
+isTileBlocked : Model -> Vec2 -> Bool
+isTileBlocked model vec =
+    -- issue is that we block because the tile the object occupies,
+    -- is occupied
+    -- need to implement object IDs
+    allObjectPositions model
+        |> List.member vec
 
 
 toPosition : Vec2 -> ( Int, Int )
@@ -140,6 +154,7 @@ movesFrom model ( x, y ) =
         positions'
             |> List.map fromPosition
             |> List.filter (tileIsInBounds model.config)
+            |> List.filter (not << isTileBlocked model)
             |> List.map toPosition
             |> Set.fromList
 
@@ -161,17 +176,25 @@ gridMoveCost ( x, y ) ( x', y' ) =
         toFloat <| xdist + ydist
 
 
-nextMove : Model -> Vec2 -> Vec2 -> Maybe (List Position)
-nextMove model origin target =
-    AStar.findPath
-        gridMoveCost
-        (movesFrom model)
-        (toPosition origin)
-        (toPosition target)
+updateEnemies : Model -> List Entity -> List Entity -> List Entity
+updateEnemies model updatedEnemies notUpdatedEnemies =
+    case notUpdatedEnemies of
+        [] ->
+            updatedEnemies
+
+        x :: xs ->
+            let
+                newModel =
+                    { model | enemies = updatedEnemies ++ notUpdatedEnemies }
+            in
+                updateEnemies
+                    newModel
+                    (moveSingleEnemy newModel x :: updatedEnemies)
+                    xs
 
 
-updateMoveSingleEnememy : Model -> Ship -> Ship
-updateMoveSingleEnememy model ship =
+moveSingleEnemy : Model -> Entity -> Entity
+moveSingleEnemy model ship =
     let
         nm =
             nextMove model ship.pos model.playerShip.pos
@@ -192,6 +215,15 @@ updateMoveSingleEnememy model ship =
         { pos = newPos }
 
 
+nextMove : Model -> Vec2 -> Vec2 -> Maybe (List Position)
+nextMove model origin target =
+    AStar.findPath
+        gridMoveCost
+        (movesFrom model)
+        (toPosition origin)
+        (toPosition target)
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -200,10 +232,7 @@ update msg model =
                 ! []
 
         MoveEnemies ->
-            { model
-                | enemies =
-                    List.map (updateMoveSingleEnememy model) model.enemies
-            }
+            { model | enemies = updateEnemies model [] model.enemies }
                 ! []
 
         Move s pt ->
@@ -227,7 +256,7 @@ update msg model =
                 newVec =
                     V.vec2 newX newY
             in
-                if moveIsInBounds && tileIsNotBlocked model newVec then
+                if moveIsInBounds && (not <| isTileBlocked model newVec) then
                     { model
                         | playerShip = { pos = newVec }
                         , enemySpawnCountdown = model.enemySpawnCountdown - 1

@@ -9951,7 +9951,7 @@ var _rgscherf$modern$Main$nextMove = F3(
 			_rgscherf$modern$Main$toPosition(origin),
 			_rgscherf$modern$Main$toPosition(target));
 	});
-var _rgscherf$modern$Main$updateMoveSingleEnememy = F2(
+var _rgscherf$modern$Main$moveSingleEnemy = F2(
 	function (model, ship) {
 		var nm = A3(_rgscherf$modern$Main$nextMove, model, ship.pos, model.playerShip.pos);
 		var newPos = function () {
@@ -9969,32 +9969,69 @@ var _rgscherf$modern$Main$updateMoveSingleEnememy = F2(
 		}();
 		return {pos: newPos};
 	});
-var _rgscherf$modern$Main$tileIsNotBlocked = F2(
+var _rgscherf$modern$Main$updateEnemies = F3(
+	function (model, updatedEnemies, notUpdatedEnemies) {
+		updateEnemies:
+		while (true) {
+			var _p14 = notUpdatedEnemies;
+			if (_p14.ctor === '[]') {
+				return updatedEnemies;
+			} else {
+				var newModel = _elm_lang$core$Native_Utils.update(
+					model,
+					{
+						enemies: A2(_elm_lang$core$Basics_ops['++'], updatedEnemies, notUpdatedEnemies)
+					});
+				var _v8 = newModel,
+					_v9 = A2(
+					_elm_lang$core$List_ops['::'],
+					A2(_rgscherf$modern$Main$moveSingleEnemy, newModel, _p14._0),
+					updatedEnemies),
+					_v10 = _p14._1;
+				model = _v8;
+				updatedEnemies = _v9;
+				notUpdatedEnemies = _v10;
+				continue updateEnemies;
+			}
+		}
+	});
+var _rgscherf$modern$Main$allObjectPositions = function (model) {
+	var allStaticPos = A2(
+		_elm_lang$core$List$map,
+		function (_) {
+			return _.pos;
+		},
+		model.islands);
+	var allShipPos = A2(
+		_elm_lang$core$List$map,
+		function (_) {
+			return _.pos;
+		},
+		A2(_elm_lang$core$List_ops['::'], model.playerShip, model.enemies));
+	return A2(_elm_lang$core$List$append, allShipPos, allStaticPos);
+};
+var _rgscherf$modern$Main$isTileBlocked = F2(
 	function (model, vec) {
-		var entityPositions = A2(
-			_elm_lang$core$List_ops['::'],
-			model.playerShip.pos,
-			A2(
-				_elm_lang$core$List$map,
-				function (_) {
-					return _.pos;
-				},
-				model.enemies));
-		return _elm_lang$core$Basics$not(
-			A2(_elm_lang$core$List$member, vec, entityPositions));
+		return A2(
+			_elm_lang$core$List$member,
+			vec,
+			_rgscherf$modern$Main$allObjectPositions(model));
 	});
 var _rgscherf$modern$Main$spawnNewEnemy = function (model) {
 	var allFreeCoords = A2(
 		_elm_lang$core$List$filter,
-		_rgscherf$modern$Main$tileIsNotBlocked(model),
+		function (_p15) {
+			return _elm_lang$core$Basics$not(
+				A2(_rgscherf$modern$Main$isTileBlocked, model, _p15));
+		},
 		_rgscherf$modern$SharedUtils$makeMapCoords(model.config.boardSize));
 	var generator = A2(
 		_elm_lang$core$Random$int,
 		0,
 		_elm_lang$core$List$length(allFreeCoords) - 1);
-	var _p14 = A2(_elm_lang$core$Random$step, generator, model.config.randomSeed);
-	var pickedIndex = _p14._0;
-	var newSeed = _p14._1;
+	var _p16 = A2(_elm_lang$core$Random$step, generator, model.config.randomSeed);
+	var pickedIndex = _p16._0;
+	var newSeed = _p16._1;
 	var newShipPos = A2(
 		_elm_lang$core$Maybe$withDefault,
 		A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, 0, 0),
@@ -10027,12 +10064,12 @@ var _rgscherf$modern$Main$InitFlags = function (a) {
 var _rgscherf$modern$Main$Ship = function (a) {
 	return {pos: a};
 };
-var _rgscherf$modern$Main$init = function (_p15) {
-	var _p16 = _p15;
+var _rgscherf$modern$Main$init = function (_p17) {
+	var _p18 = _p17;
 	return A2(
 		_elm_lang$core$Platform_Cmd_ops['!'],
 		{
-			config: _rgscherf$modern$Main$initConfig(_p16.startTime),
+			config: _rgscherf$modern$Main$initConfig(_p18.startTime),
 			playerShip: _rgscherf$modern$Main$Ship(
 				A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, 0, 0)),
 			playerMovementRange: 2,
@@ -10067,8 +10104,8 @@ var _rgscherf$modern$Main$Move = F2(
 	});
 var _rgscherf$modern$Main$update = F2(
 	function (msg, model) {
-		var _p17 = msg;
-		switch (_p17.ctor) {
+		var _p19 = msg;
+		switch (_p19.ctor) {
 			case 'NoOp':
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
@@ -10081,23 +10118,26 @@ var _rgscherf$modern$Main$update = F2(
 					_elm_lang$core$Native_Utils.update(
 						model,
 						{
-							enemies: A2(
-								_elm_lang$core$List$map,
-								_rgscherf$modern$Main$updateMoveSingleEnememy(model),
+							enemies: A3(
+								_rgscherf$modern$Main$updateEnemies,
+								model,
+								_elm_lang$core$Native_List.fromArray(
+									[]),
 								model.enemies)
 						}),
 					_elm_lang$core$Native_List.fromArray(
 						[]));
 			case 'Move':
-				var _p19 = _p17._0;
-				var _p18 = _p17._1;
+				var _p21 = _p19._0;
+				var _p20 = _p19._1;
 				var newY = _elm_community$elm_linear_algebra$Math_Vector2$getY(
-					A2(_elm_community$elm_linear_algebra$Math_Vector2$add, _p18, _p19.pos));
+					A2(_elm_community$elm_linear_algebra$Math_Vector2$add, _p20, _p21.pos));
 				var newX = _elm_community$elm_linear_algebra$Math_Vector2$getX(
-					A2(_elm_community$elm_linear_algebra$Math_Vector2$add, _p18, _p19.pos));
+					A2(_elm_community$elm_linear_algebra$Math_Vector2$add, _p20, _p21.pos));
 				var moveIsInBounds = (_elm_lang$core$Native_Utils.cmp(newX, 0) > -1) && ((_elm_lang$core$Native_Utils.cmp(newX, model.config.boardSize) < 0) && ((_elm_lang$core$Native_Utils.cmp(newY, 0) > -1) && (_elm_lang$core$Native_Utils.cmp(newY, model.config.boardSize) < 0)));
 				var newVec = A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, newX, newY);
-				return (moveIsInBounds && A2(_rgscherf$modern$Main$tileIsNotBlocked, model, newVec)) ? A2(
+				return (moveIsInBounds && _elm_lang$core$Basics$not(
+					A2(_rgscherf$modern$Main$isTileBlocked, model, newVec))) ? A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
 						model,
@@ -10119,9 +10159,9 @@ var _rgscherf$modern$Main$update = F2(
 						[]));
 			case 'SpawnEnemy':
 				var config = model.config;
-				var _p20 = _rgscherf$modern$Main$spawnNewEnemy(model);
-				var newShip = _p20._0;
-				var newSeed = _p20._1;
+				var _p22 = _rgscherf$modern$Main$spawnNewEnemy(model);
+				var newShip = _p22._0;
+				var newSeed = _p22._1;
 				var config$ = _elm_lang$core$Native_Utils.update(
 					config,
 					{randomSeed: newSeed});
@@ -10141,7 +10181,7 @@ var _rgscherf$modern$Main$update = F2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
 						model,
-						{currentlyHighlightedTile: _p17._0}),
+						{currentlyHighlightedTile: _p19._0}),
 					_elm_lang$core$Native_List.fromArray(
 						[]));
 			default:
@@ -10155,8 +10195,8 @@ var _rgscherf$modern$Main$update = F2(
 								A2(_rgscherf$modern$Main$Move, model.playerShip, v))
 							]));
 				};
-				var _p21 = _p17._0;
-				switch (_p21.valueOf()) {
+				var _p23 = _p19._0;
+				switch (_p23.valueOf()) {
 					case 'w':
 						return movePlayer(
 							A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, 0, -1));
