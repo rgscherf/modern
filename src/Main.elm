@@ -19,6 +19,7 @@ type alias Config =
     , randomSeed : Seed
     , timeBetweenEnemySpawns : Int
     , chaseDistance : Float
+    , numberOfLands : Int
     }
 
 
@@ -47,7 +48,45 @@ init { startTime } =
     , enemySpawnCountdown = 3
     , entityId = 1
     }
-        ! []
+        ! [ C.message SpawnLands ]
+
+
+makeLands : Model -> Int -> Model
+makeLands model numSpawnsRemaining =
+    case numSpawnsRemaining of
+        0 ->
+            model
+
+        n ->
+            let
+                ( model', newLand ) =
+                    spawnSingleLand model
+            in
+                makeLands model' (n - 1)
+
+
+spawnSingleLand : Model -> ( Model, Entity )
+spawnSingleLand model =
+    let
+        allfreecoords =
+            freeCoordsOnMap model
+
+        generator =
+            Random.int 0 ((List.length allfreecoords) - 1)
+
+        ( pickedindex, newseed ) =
+            Random.step generator model.config.randomSeed
+
+        newLand =
+            { pos = Maybe.withDefault (V.vec2 0 0) <| allfreecoords !! pickedindex, entType = LandEntity, entId = model.entityId }
+
+        cfg =
+            model.config
+
+        cfg' =
+            { cfg | randomSeed = newseed }
+    in
+        ( { model | entities = newLand :: model.entities, config = cfg' }, newLand )
 
 
 initConfig : Int -> Config
@@ -57,6 +96,7 @@ initConfig startTime =
     , randomSeed = Random.initialSeed startTime
     , timeBetweenEnemySpawns = 3
     , chaseDistance = 10
+    , numberOfLands = round <| (24 * 24) / 8
     }
 
 
@@ -85,6 +125,7 @@ type Msg
     | CursorEnterTile Vec2
     | KeyboardEvent Char
     | SpawnEnemy
+    | SpawnLands
     | MoveEnemies
 
 
@@ -94,24 +135,29 @@ type Msg
 ---------
 
 
+freeCoordsOnMap : Model -> List Vec2
+freeCoordsOnMap model =
+    -- list of free coordinates
+    -- ( except for player's position )
+    makeMapCoords model.config.boardSize
+        |> List.filter (not << isTileOccupied model)
+        |> List.filter (\a -> a /= model.playerShip.pos)
+
+
 spawnNewEnemy : Model -> ( Entity, Seed, Int )
 spawnNewEnemy model =
     let
-        allFreeCoords =
-            makeMapCoords model.config.boardSize
-                |> List.filter (not << isTileOccupied model)
-                -- spawn on any free tile EXCEPT player's position
-                |>
-                    List.filter (\a -> a /= model.playerShip.pos)
+        allfreecoords =
+            freeCoordsOnMap model
 
         generator =
-            Random.int 0 ((List.length allFreeCoords) - 1)
+            Random.int 0 ((List.length allfreecoords) - 1)
 
         ( pickedIndex, newSeed ) =
             Random.step generator model.config.randomSeed
 
         newShipPos =
-            Maybe.withDefault (V.vec2 0 0) (allFreeCoords !! pickedIndex)
+            Maybe.withDefault (V.vec2 0 0) (allfreecoords !! pickedIndex)
     in
         ( { pos = newShipPos
           , entType = Ship
@@ -283,6 +329,19 @@ update msg model =
                           )
                 else
                     model ! []
+
+        SpawnLands ->
+            let
+                model' =
+                    makeLands model model.config.numberOfLands
+
+                cfg =
+                    model'.config
+
+                cfg' =
+                    { cfg | randomSeed = model'.config.randomSeed }
+            in
+                { model | config = cfg', entities = model'.entities } ! []
 
         SpawnEnemy ->
             let

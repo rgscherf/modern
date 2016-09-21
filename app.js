@@ -10026,18 +10026,33 @@ var _rgscherf$modern$Main$updateEnemies = F3(
 			}
 		}
 	});
+var _rgscherf$modern$Main$freeCoordsOnMap = function (model) {
+	return A2(
+		_elm_lang$core$List$filter,
+		function (a) {
+			return !_elm_lang$core$Native_Utils.eq(a, model.playerShip.pos);
+		},
+		A2(
+			_elm_lang$core$List$filter,
+			function (_p18) {
+				return _elm_lang$core$Basics$not(
+					A2(_rgscherf$modern$Main$isTileOccupied, model, _p18));
+			},
+			_rgscherf$modern$SharedUtils$makeMapCoords(model.config.boardSize)));
+};
 var _rgscherf$modern$Main$initConfig = function (startTime) {
 	return {
 		tileSize: 30,
 		boardSize: 24,
 		randomSeed: _elm_lang$core$Random$initialSeed(startTime),
 		timeBetweenEnemySpawns: 3,
-		chaseDistance: 10
+		chaseDistance: 10,
+		numberOfLands: _elm_lang$core$Basics$round((24 * 24) / 8)
 	};
 };
-var _rgscherf$modern$Main$Config = F5(
-	function (a, b, c, d, e) {
-		return {tileSize: a, boardSize: b, randomSeed: c, timeBetweenEnemySpawns: d, chaseDistance: e};
+var _rgscherf$modern$Main$Config = F6(
+	function (a, b, c, d, e, f) {
+		return {tileSize: a, boardSize: b, randomSeed: c, timeBetweenEnemySpawns: d, chaseDistance: e, numberOfLands: f};
 	});
 var _rgscherf$modern$Main$Model = F7(
 	function (a, b, c, d, e, f, g) {
@@ -10051,13 +10066,90 @@ var _rgscherf$modern$Main$Entity = F3(
 		return {pos: a, entType: b, entId: c};
 	});
 var _rgscherf$modern$Main$LandEntity = {ctor: 'LandEntity'};
+var _rgscherf$modern$Main$spawnSingleLand = function (model) {
+	var cfg = model.config;
+	var allfreecoords = _rgscherf$modern$Main$freeCoordsOnMap(model);
+	var generator = A2(
+		_elm_lang$core$Random$int,
+		0,
+		_elm_lang$core$List$length(allfreecoords) - 1);
+	var _p19 = A2(_elm_lang$core$Random$step, generator, model.config.randomSeed);
+	var pickedindex = _p19._0;
+	var newseed = _p19._1;
+	var cfg$ = _elm_lang$core$Native_Utils.update(
+		cfg,
+		{randomSeed: newseed});
+	var newLand = {
+		pos: A2(
+			_elm_lang$core$Maybe$withDefault,
+			A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, 0, 0),
+			A2(_rgscherf$modern$SharedUtils_ops['!!'], allfreecoords, pickedindex)),
+		entType: _rgscherf$modern$Main$LandEntity,
+		entId: model.entityId
+	};
+	return {
+		ctor: '_Tuple2',
+		_0: _elm_lang$core$Native_Utils.update(
+			model,
+			{
+				entities: A2(_elm_lang$core$List_ops['::'], newLand, model.entities),
+				config: cfg$
+			}),
+		_1: newLand
+	};
+};
+var _rgscherf$modern$Main$makeLands = F2(
+	function (model, numSpawnsRemaining) {
+		makeLands:
+		while (true) {
+			var _p20 = numSpawnsRemaining;
+			if (_p20 === 0) {
+				return model;
+			} else {
+				var _p21 = _rgscherf$modern$Main$spawnSingleLand(model);
+				var model$ = _p21._0;
+				var newLand = _p21._1;
+				var _v13 = model$,
+					_v14 = _p20 - 1;
+				model = _v13;
+				numSpawnsRemaining = _v14;
+				continue makeLands;
+			}
+		}
+	});
 var _rgscherf$modern$Main$Ship = {ctor: 'Ship'};
-var _rgscherf$modern$Main$init = function (_p18) {
-	var _p19 = _p18;
+var _rgscherf$modern$Main$spawnNewEnemy = function (model) {
+	var allfreecoords = _rgscherf$modern$Main$freeCoordsOnMap(model);
+	var generator = A2(
+		_elm_lang$core$Random$int,
+		0,
+		_elm_lang$core$List$length(allfreecoords) - 1);
+	var _p22 = A2(_elm_lang$core$Random$step, generator, model.config.randomSeed);
+	var pickedIndex = _p22._0;
+	var newSeed = _p22._1;
+	var newShipPos = A2(
+		_elm_lang$core$Maybe$withDefault,
+		A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, 0, 0),
+		A2(_rgscherf$modern$SharedUtils_ops['!!'], allfreecoords, pickedIndex));
+	return {
+		ctor: '_Tuple3',
+		_0: {pos: newShipPos, entType: _rgscherf$modern$Main$Ship, entId: model.entityId},
+		_1: newSeed,
+		_2: model.entityId + 1
+	};
+};
+var _rgscherf$modern$Main$Land = {ctor: 'Land'};
+var _rgscherf$modern$Main$Enemy = {ctor: 'Enemy'};
+var _rgscherf$modern$Main$Player = {ctor: 'Player'};
+var _rgscherf$modern$Main$Sea = {ctor: 'Sea'};
+var _rgscherf$modern$Main$MoveEnemies = {ctor: 'MoveEnemies'};
+var _rgscherf$modern$Main$SpawnLands = {ctor: 'SpawnLands'};
+var _rgscherf$modern$Main$init = function (_p23) {
+	var _p24 = _p23;
 	return A2(
 		_elm_lang$core$Platform_Cmd_ops['!'],
 		{
-			config: _rgscherf$modern$Main$initConfig(_p19.startTime),
+			config: _rgscherf$modern$Main$initConfig(_p24.startTime),
 			playerShip: A3(
 				_rgscherf$modern$Main$Entity,
 				A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, 0, 0),
@@ -10071,44 +10163,10 @@ var _rgscherf$modern$Main$init = function (_p18) {
 			entityId: 1
 		},
 		_elm_lang$core$Native_List.fromArray(
-			[]));
+			[
+				_shmookey$cmd_extra$Cmd_Extra$message(_rgscherf$modern$Main$SpawnLands)
+			]));
 };
-var _rgscherf$modern$Main$spawnNewEnemy = function (model) {
-	var allFreeCoords = A2(
-		_elm_lang$core$List$filter,
-		function (a) {
-			return !_elm_lang$core$Native_Utils.eq(a, model.playerShip.pos);
-		},
-		A2(
-			_elm_lang$core$List$filter,
-			function (_p20) {
-				return _elm_lang$core$Basics$not(
-					A2(_rgscherf$modern$Main$isTileOccupied, model, _p20));
-			},
-			_rgscherf$modern$SharedUtils$makeMapCoords(model.config.boardSize)));
-	var generator = A2(
-		_elm_lang$core$Random$int,
-		0,
-		_elm_lang$core$List$length(allFreeCoords) - 1);
-	var _p21 = A2(_elm_lang$core$Random$step, generator, model.config.randomSeed);
-	var pickedIndex = _p21._0;
-	var newSeed = _p21._1;
-	var newShipPos = A2(
-		_elm_lang$core$Maybe$withDefault,
-		A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, 0, 0),
-		A2(_rgscherf$modern$SharedUtils_ops['!!'], allFreeCoords, pickedIndex));
-	return {
-		ctor: '_Tuple3',
-		_0: {pos: newShipPos, entType: _rgscherf$modern$Main$Ship, entId: model.entityId},
-		_1: newSeed,
-		_2: model.entityId + 1
-	};
-};
-var _rgscherf$modern$Main$Land = {ctor: 'Land'};
-var _rgscherf$modern$Main$Enemy = {ctor: 'Enemy'};
-var _rgscherf$modern$Main$Player = {ctor: 'Player'};
-var _rgscherf$modern$Main$Sea = {ctor: 'Sea'};
-var _rgscherf$modern$Main$MoveEnemies = {ctor: 'MoveEnemies'};
 var _rgscherf$modern$Main$SpawnEnemy = {ctor: 'SpawnEnemy'};
 var _rgscherf$modern$Main$KeyboardEvent = function (a) {
 	return {ctor: 'KeyboardEvent', _0: a};
@@ -10122,8 +10180,8 @@ var _rgscherf$modern$Main$Move = F2(
 	});
 var _rgscherf$modern$Main$update = F2(
 	function (msg, model) {
-		var _p22 = msg;
-		switch (_p22.ctor) {
+		var _p25 = msg;
+		switch (_p25.ctor) {
 			case 'NoOp':
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
@@ -10146,12 +10204,12 @@ var _rgscherf$modern$Main$update = F2(
 					_elm_lang$core$Native_List.fromArray(
 						[]));
 			case 'Move':
-				var _p24 = _p22._0;
-				var _p23 = _p22._1;
+				var _p27 = _p25._0;
+				var _p26 = _p25._1;
 				var newY = _elm_community$elm_linear_algebra$Math_Vector2$getY(
-					A2(_elm_community$elm_linear_algebra$Math_Vector2$add, _p23, _p24.pos));
+					A2(_elm_community$elm_linear_algebra$Math_Vector2$add, _p26, _p27.pos));
 				var newX = _elm_community$elm_linear_algebra$Math_Vector2$getX(
-					A2(_elm_community$elm_linear_algebra$Math_Vector2$add, _p23, _p24.pos));
+					A2(_elm_community$elm_linear_algebra$Math_Vector2$add, _p26, _p27.pos));
 				var moveIsInBounds = (_elm_lang$core$Native_Utils.cmp(newX, 0) > -1) && ((_elm_lang$core$Native_Utils.cmp(newX, model.config.boardSize) < 0) && ((_elm_lang$core$Native_Utils.cmp(newY, 0) > -1) && (_elm_lang$core$Native_Utils.cmp(newY, model.config.boardSize) < 0)));
 				var newVec = A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, newX, newY);
 				return (moveIsInBounds && _elm_lang$core$Basics$not(
@@ -10175,12 +10233,25 @@ var _rgscherf$modern$Main$update = F2(
 					model,
 					_elm_lang$core$Native_List.fromArray(
 						[]));
+			case 'SpawnLands':
+				var model$ = A2(_rgscherf$modern$Main$makeLands, model, model.config.numberOfLands);
+				var cfg = model$.config;
+				var cfg$ = _elm_lang$core$Native_Utils.update(
+					cfg,
+					{randomSeed: model$.config.randomSeed});
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{config: cfg$, entities: model$.entities}),
+					_elm_lang$core$Native_List.fromArray(
+						[]));
 			case 'SpawnEnemy':
 				var config = model.config;
-				var _p25 = _rgscherf$modern$Main$spawnNewEnemy(model);
-				var newShip = _p25._0;
-				var newSeed = _p25._1;
-				var newEntityId = _p25._2;
+				var _p28 = _rgscherf$modern$Main$spawnNewEnemy(model);
+				var newShip = _p28._0;
+				var newSeed = _p28._1;
+				var newEntityId = _p28._2;
 				var config$ = _elm_lang$core$Native_Utils.update(
 					config,
 					{randomSeed: newSeed});
@@ -10201,7 +10272,7 @@ var _rgscherf$modern$Main$update = F2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
 						model,
-						{currentlyHighlightedTile: _p22._0}),
+						{currentlyHighlightedTile: _p25._0}),
 					_elm_lang$core$Native_List.fromArray(
 						[]));
 			default:
@@ -10215,8 +10286,8 @@ var _rgscherf$modern$Main$update = F2(
 								A2(_rgscherf$modern$Main$Move, model.playerShip, v))
 							]));
 				};
-				var _p26 = _p22._0;
-				switch (_p26.valueOf()) {
+				var _p29 = _p25._0;
+				switch (_p29.valueOf()) {
 					case 'w':
 						return movePlayer(
 							A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, 0, -1));
@@ -10252,16 +10323,8 @@ var _rgscherf$modern$Main$update = F2(
 	});
 var _rgscherf$modern$Main$NoOp = {ctor: 'NoOp'};
 
-var _rgscherf$modern$View$getShipPos = function (_p0) {
-	var _p1 = _p0;
-	var _p2 = _p1.pos;
-	return {
-		ctor: '_Tuple2',
-		_0: _elm_community$elm_linear_algebra$Math_Vector2$getX(_p2),
-		_1: _elm_community$elm_linear_algebra$Math_Vector2$getY(_p2)
-	};
-};
 var _rgscherf$modern$View$renderPlayer = function (model) {
+	var playerPos$ = _elm_community$elm_linear_algebra$Math_Vector2$toRecord(model.playerShip.pos);
 	return _elm_lang$core$Native_List.fromArray(
 		[
 			A2(
@@ -10269,24 +10332,14 @@ var _rgscherf$modern$View$renderPlayer = function (model) {
 			_elm_lang$core$Native_List.fromArray(
 				[
 					_elm_lang$svg$Svg_Attributes$x(
-					_elm_lang$core$Basics$toString(
-						function (a) {
-							return a * model.config.tileSize;
-						}(
-							_elm_lang$core$Basics$fst(
-								_rgscherf$modern$View$getShipPos(model.playerShip))))),
+					_elm_lang$core$Basics$toString(playerPos$.x * model.config.tileSize)),
 					_elm_lang$svg$Svg_Attributes$y(
-					_elm_lang$core$Basics$toString(
-						function (a) {
-							return a * model.config.tileSize;
-						}(
-							_elm_lang$core$Basics$snd(
-								_rgscherf$modern$View$getShipPos(model.playerShip))))),
+					_elm_lang$core$Basics$toString(playerPos$.y * model.config.tileSize)),
 					_elm_lang$svg$Svg_Attributes$fill('Aquamarine'),
 					_elm_lang$svg$Svg_Attributes$width(
-					_elm_lang$core$Basics$toString(model.config.tileSize)),
+					_elm_lang$core$Basics$toString(model.config.tileSize - 5)),
 					_elm_lang$svg$Svg_Attributes$height(
-					_elm_lang$core$Basics$toString(model.config.tileSize)),
+					_elm_lang$core$Basics$toString(model.config.tileSize - 5)),
 					_elm_lang$svg$Svg_Events$onMouseOver(
 					_rgscherf$modern$Main$CursorEnterTile(model.playerShip.pos))
 				]),
@@ -10294,7 +10347,7 @@ var _rgscherf$modern$View$renderPlayer = function (model) {
 				[]))
 		]);
 };
-var _rgscherf$modern$View$makeOneRect = F2(
+var _rgscherf$modern$View$makeOneSeaTile = F2(
 	function (model, pos) {
 		var isHighligtedTile = _elm_lang$core$Native_Utils.eq(model.currentlyHighlightedTile, pos);
 		var isInRange = _elm_lang$core$Native_Utils.cmp(
@@ -10329,14 +10382,20 @@ var _rgscherf$modern$View$makeMapTiles = function (model) {
 	var boardCoords = _rgscherf$modern$SharedUtils$makeMapCoords(model.config.boardSize);
 	return A2(
 		_elm_lang$core$List$map,
-		_rgscherf$modern$View$makeOneRect(model),
+		_rgscherf$modern$View$makeOneSeaTile(model),
 		boardCoords);
 };
-var _rgscherf$modern$View$renderEnemy = F2(
-	function (tileSize, _p3) {
-		var _p4 = _p3;
-		var _p5 = _p4.pos;
-		var pos$ = _elm_community$elm_linear_algebra$Math_Vector2$toRecord(_p5);
+var _rgscherf$modern$View$renderEntity = F2(
+	function (tileSize, entity) {
+		var tileColor = function () {
+			var _p0 = entity.entType;
+			if (_p0.ctor === 'Ship') {
+				return 'Red';
+			} else {
+				return 'Orange';
+			}
+		}();
+		var pos$ = _elm_community$elm_linear_algebra$Math_Vector2$toRecord(entity.pos);
 		return A2(
 			_elm_lang$svg$Svg$rect,
 			_elm_lang$core$Native_List.fromArray(
@@ -10345,13 +10404,13 @@ var _rgscherf$modern$View$renderEnemy = F2(
 					_elm_lang$core$Basics$toString(pos$.x * tileSize)),
 					_elm_lang$svg$Svg_Attributes$y(
 					_elm_lang$core$Basics$toString(pos$.y * tileSize)),
-					_elm_lang$svg$Svg_Attributes$fill('Red'),
+					_elm_lang$svg$Svg_Attributes$fill(tileColor),
 					_elm_lang$svg$Svg_Attributes$width(
-					_elm_lang$core$Basics$toString(tileSize)),
+					_elm_lang$core$Basics$toString(tileSize - 5)),
 					_elm_lang$svg$Svg_Attributes$height(
-					_elm_lang$core$Basics$toString(tileSize)),
+					_elm_lang$core$Basics$toString(tileSize - 5)),
 					_elm_lang$svg$Svg_Events$onMouseOver(
-					_rgscherf$modern$Main$CursorEnterTile(_p5))
+					_rgscherf$modern$Main$CursorEnterTile(entity.pos))
 				]),
 			_elm_lang$core$Native_List.fromArray(
 				[]));
@@ -10375,8 +10434,8 @@ var _rgscherf$modern$View$MouseInfoDivPackage = F2(
 		return {headline: a, description: b};
 	});
 var _rgscherf$modern$View$fillMouseInfoDiv = function (terr) {
-	var _p6 = terr;
-	switch (_p6.ctor) {
+	var _p1 = terr;
+	switch (_p1.ctor) {
 		case 'Player':
 			return A2(_rgscherf$modern$View$MouseInfoDivPackage, 'It\'s you!', 'The intrepid trader');
 		case 'Enemy':
@@ -10424,7 +10483,7 @@ var _rgscherf$modern$View$view = function (model) {
 								_elm_lang$core$Basics_ops['++'],
 								A2(
 									_elm_lang$core$List$map,
-									_rgscherf$modern$View$renderEnemy(model.config.tileSize),
+									_rgscherf$modern$View$renderEntity(model.config.tileSize),
 									model.entities),
 								_rgscherf$modern$View$renderPlayer(model)))),
 						A2(

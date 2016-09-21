@@ -57,7 +57,7 @@ view model =
                     [ width gameSizeStr, height gameSizeStr ]
                   <|
                     (makeMapTiles model)
-                        ++ (List.map (renderEnemy model.config.tileSize) model.entities)
+                        ++ (List.map (renderEntity model.config.tileSize) model.entities)
                         ++ (renderPlayer model)
                 , Html.div
                     [ HA.style [ ( "width", "400px" ), ( "background", "LightSlateGrey" ) ] ]
@@ -69,19 +69,27 @@ view model =
             ]
 
 
-renderEnemy : Float -> Entity -> Svg Msg
-renderEnemy tileSize { pos } =
+renderEntity : Float -> Entity -> Svg Msg
+renderEntity tileSize entity =
     let
         pos' =
-            V.toRecord pos
+            V.toRecord entity.pos
+
+        tileColor =
+            case entity.entType of
+                Ship ->
+                    "Red"
+
+                LandEntity ->
+                    "Orange"
     in
         rect
             [ x <| toString <| pos'.x * tileSize
             , y <| toString <| pos'.y * tileSize
-            , fill <| "Red"
-            , width <| toString tileSize
-            , height <| toString tileSize
-            , SE.onMouseOver <| CursorEnterTile pos
+            , fill <| tileColor
+            , width <| toString <| tileSize - 5
+            , height <| toString <| tileSize - 5
+            , SE.onMouseOver <| CursorEnterTile entity.pos
             ]
             []
 
@@ -92,11 +100,11 @@ makeMapTiles model =
         boardCoords =
             makeMapCoords model.config.boardSize
     in
-        List.map (makeOneRect model) boardCoords
+        List.map (makeOneSeaTile model) boardCoords
 
 
-makeOneRect : Model -> Vec2 -> Svg Msg
-makeOneRect model pos =
+makeOneSeaTile : Model -> Vec2 -> Svg Msg
+makeOneSeaTile model pos =
     let
         pos' =
             V.toRecord pos
@@ -143,20 +151,19 @@ makeOneRect model pos =
             []
 
 
-getShipPos : Entity -> ( Float, Float )
-getShipPos { pos } =
-    ( V.getX pos, V.getY pos )
-
-
 renderPlayer : Model -> List (Svg Msg)
 renderPlayer model =
-    [ rect
-        [ x (toString <| (\a -> a * model.config.tileSize) <| fst <| getShipPos model.playerShip)
-        , y (toString <| (\a -> a * model.config.tileSize) <| snd <| getShipPos model.playerShip)
-        , fill "Aquamarine"
-        , width <| toString model.config.tileSize
-        , height <| toString model.config.tileSize
-        , SE.onMouseOver <| CursorEnterTile model.playerShip.pos
+    let
+        playerPos' =
+            V.toRecord model.playerShip.pos
+    in
+        [ rect
+            [ x (toString <| playerPos'.x * model.config.tileSize)
+            , y (toString <| playerPos'.y * model.config.tileSize)
+            , fill "Aquamarine"
+            , width <| toString <| model.config.tileSize - 5
+            , height <| toString <| model.config.tileSize - 5
+            , SE.onMouseOver <| CursorEnterTile model.playerShip.pos
+            ]
+            []
         ]
-        []
-    ]
