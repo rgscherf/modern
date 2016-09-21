@@ -9891,6 +9891,18 @@ var _rgscherf$modern$Main$gridMoveCost = F2(
 		var xdist = _elm_lang$core$Basics$abs(_p2._0 - _p3._0);
 		return _elm_lang$core$Basics$toFloat(xdist + ydist);
 	});
+var _rgscherf$modern$Main$isTileOccupied = F2(
+	function (model, vec) {
+		return A2(
+			_elm_lang$core$List$member,
+			vec,
+			A2(
+				_elm_lang$core$List$map,
+				function (_) {
+					return _.pos;
+				},
+				model.entities));
+	});
 var _rgscherf$modern$Main$tileIsInBounds = F2(
 	function (cfg, v) {
 		return (_elm_lang$core$Native_Utils.cmp(
@@ -9921,47 +9933,17 @@ var _rgscherf$modern$Main$toPosition = function (v) {
 	}(
 		_elm_community$elm_linear_algebra$Math_Vector2$toTuple(v));
 };
-var _rgscherf$modern$Main$isTileOccupied = F3(
-	function (model, mightBeMovingEntity, vec) {
-		var _p8 = mightBeMovingEntity;
-		if (_p8.ctor === 'Nothing') {
-			return A2(
-				_elm_lang$core$List$member,
-				vec,
-				A2(
-					_elm_lang$core$List$map,
-					function (_) {
-						return _.pos;
-					},
-					A2(_elm_lang$core$List_ops['::'], model.playerShip, model.entities)));
-		} else {
-			return A2(
-				_elm_lang$core$List$member,
-				vec,
-				A2(
-					_elm_lang$core$List$map,
-					function (_) {
-						return _.pos;
-					},
-					A2(
-						_elm_lang$core$List$filter,
-						function (a) {
-							return !_elm_lang$core$Native_Utils.eq(a.entId, _p8._0.entId);
-						},
-						A2(_elm_lang$core$List_ops['::'], model.playerShip, model.entities))));
-		}
-	});
 var _rgscherf$modern$Main$movesFrom = F3(
-	function (model, ent, _p9) {
-		var _p10 = _p9;
-		var _p13 = _p10._1;
-		var _p12 = _p10._0;
-		var positions$ = _elm_lang$core$Native_List.fromArray(
+	function (model, ent, _p8) {
+		var _p9 = _p8;
+		var _p12 = _p9._1;
+		var _p11 = _p9._0;
+		var possibleMoves = _elm_lang$core$Native_List.fromArray(
 			[
-				{ctor: '_Tuple2', _0: _p12 + 1, _1: _p13},
-				{ctor: '_Tuple2', _0: _p12 - 1, _1: _p13},
-				{ctor: '_Tuple2', _0: _p12, _1: _p13 - 1},
-				{ctor: '_Tuple2', _0: _p12, _1: _p13 + 1}
+				{ctor: '_Tuple2', _0: _p11 + 1, _1: _p12},
+				{ctor: '_Tuple2', _0: _p11 - 1, _1: _p12},
+				{ctor: '_Tuple2', _0: _p11, _1: _p12 - 1},
+				{ctor: '_Tuple2', _0: _p11, _1: _p12 + 1}
 			]);
 		return _elm_lang$core$Set$fromList(
 			A2(
@@ -9969,45 +9951,47 @@ var _rgscherf$modern$Main$movesFrom = F3(
 				_rgscherf$modern$Main$toPosition,
 				A2(
 					_elm_lang$core$List$filter,
-					function (_p11) {
+					function (_p10) {
 						return _elm_lang$core$Basics$not(
-							A3(
-								_rgscherf$modern$Main$isTileOccupied,
-								model,
-								_elm_lang$core$Maybe$Just(ent),
-								_p11));
+							A2(_rgscherf$modern$Main$isTileOccupied, model, _p10));
 					},
 					A2(
 						_elm_lang$core$List$filter,
 						_rgscherf$modern$Main$tileIsInBounds(model.config),
-						A2(_elm_lang$core$List$map, _rgscherf$modern$Main$fromPosition, positions$)))));
+						A2(_elm_lang$core$List$map, _rgscherf$modern$Main$fromPosition, possibleMoves)))));
 	});
-var _rgscherf$modern$Main$nextMove = F4(
-	function (model, entity, origin, target) {
+var _rgscherf$modern$Main$getPathTo = F3(
+	function (model, entity, target) {
 		return A4(
 			_krisajenkins$elm_astar$AStar$findPath,
 			_rgscherf$modern$Main$gridMoveCost,
 			A2(_rgscherf$modern$Main$movesFrom, model, entity),
-			_rgscherf$modern$Main$toPosition(origin),
+			_rgscherf$modern$Main$toPosition(entity.pos),
 			_rgscherf$modern$Main$toPosition(target));
 	});
 var _rgscherf$modern$Main$moveSingleEnemy = F2(
 	function (model, entity) {
-		var _p14 = entity.entType;
-		if (_p14.ctor === 'LandEntity') {
+		var _p13 = entity.entType;
+		if (_p13.ctor === 'LandEntity') {
 			return entity;
 		} else {
-			var nm = A4(_rgscherf$modern$Main$nextMove, model, entity, entity.pos, model.playerShip.pos);
+			var isInChasingDistance = _elm_lang$core$Native_Utils.cmp(
+				A2(_elm_community$elm_linear_algebra$Math_Vector2$distance, entity.pos, model.playerShip.pos),
+				model.config.chaseDistance) < 0;
+			var pathTo = isInChasingDistance ? A3(_rgscherf$modern$Main$getPathTo, model, entity, model.playerShip.pos) : _elm_lang$core$Maybe$Nothing;
 			var newPos = function () {
-				var _p15 = nm;
-				if (_p15.ctor === 'Nothing') {
+				var _p14 = pathTo;
+				if (_p14.ctor === 'Nothing') {
 					return entity.pos;
 				} else {
-					var _p16 = _elm_lang$core$List$head(_p15._0);
-					if (_p16.ctor === 'Nothing') {
+					var _p15 = _elm_lang$core$List$head(_p14._0);
+					if (_p15.ctor === 'Nothing') {
 						return entity.pos;
 					} else {
-						return _rgscherf$modern$Main$fromPosition(_p16._0);
+						var _p16 = _p15._0;
+						return _elm_lang$core$Native_Utils.eq(
+							_rgscherf$modern$Main$fromPosition(_p16),
+							model.playerShip.pos) ? entity.pos : _rgscherf$modern$Main$fromPosition(_p16);
 					}
 				}
 			}();
@@ -10029,15 +10013,15 @@ var _rgscherf$modern$Main$updateEnemies = F3(
 					{
 						entities: A2(_elm_lang$core$Basics_ops['++'], updatedEntities, notUpdateEntities)
 					});
-				var _v10 = newModel,
-					_v11 = A2(
+				var _v9 = newModel,
+					_v10 = A2(
 					_elm_lang$core$List_ops['::'],
 					A2(_rgscherf$modern$Main$moveSingleEnemy, newModel, _p17._0),
 					updatedEntities),
-					_v12 = _p17._1;
-				model = _v10;
-				updatedEntities = _v11;
-				notUpdateEntities = _v12;
+					_v11 = _p17._1;
+				model = _v9;
+				updatedEntities = _v10;
+				notUpdateEntities = _v11;
 				continue updateEnemies;
 			}
 		}
@@ -10047,12 +10031,13 @@ var _rgscherf$modern$Main$initConfig = function (startTime) {
 		tileSize: 30,
 		boardSize: 24,
 		randomSeed: _elm_lang$core$Random$initialSeed(startTime),
-		timeBetweenEnemySpawns: 3
+		timeBetweenEnemySpawns: 3,
+		chaseDistance: 10
 	};
 };
-var _rgscherf$modern$Main$Config = F4(
-	function (a, b, c, d) {
-		return {tileSize: a, boardSize: b, randomSeed: c, timeBetweenEnemySpawns: d};
+var _rgscherf$modern$Main$Config = F5(
+	function (a, b, c, d, e) {
+		return {tileSize: a, boardSize: b, randomSeed: c, timeBetweenEnemySpawns: d, chaseDistance: e};
 	});
 var _rgscherf$modern$Main$Model = F7(
 	function (a, b, c, d, e, f, g) {
@@ -10091,11 +10076,16 @@ var _rgscherf$modern$Main$init = function (_p18) {
 var _rgscherf$modern$Main$spawnNewEnemy = function (model) {
 	var allFreeCoords = A2(
 		_elm_lang$core$List$filter,
-		function (_p20) {
-			return _elm_lang$core$Basics$not(
-				A3(_rgscherf$modern$Main$isTileOccupied, model, _elm_lang$core$Maybe$Nothing, _p20));
+		function (a) {
+			return !_elm_lang$core$Native_Utils.eq(a, model.playerShip.pos);
 		},
-		_rgscherf$modern$SharedUtils$makeMapCoords(model.config.boardSize));
+		A2(
+			_elm_lang$core$List$filter,
+			function (_p20) {
+				return _elm_lang$core$Basics$not(
+					A2(_rgscherf$modern$Main$isTileOccupied, model, _p20));
+			},
+			_rgscherf$modern$SharedUtils$makeMapCoords(model.config.boardSize)));
 	var generator = A2(
 		_elm_lang$core$Random$int,
 		0,
@@ -10165,7 +10155,7 @@ var _rgscherf$modern$Main$update = F2(
 				var moveIsInBounds = (_elm_lang$core$Native_Utils.cmp(newX, 0) > -1) && ((_elm_lang$core$Native_Utils.cmp(newX, model.config.boardSize) < 0) && ((_elm_lang$core$Native_Utils.cmp(newY, 0) > -1) && (_elm_lang$core$Native_Utils.cmp(newY, model.config.boardSize) < 0)));
 				var newVec = A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, newX, newY);
 				return (moveIsInBounds && _elm_lang$core$Basics$not(
-					A3(_rgscherf$modern$Main$isTileOccupied, model, _elm_lang$core$Maybe$Nothing, newVec))) ? A2(
+					A2(_rgscherf$modern$Main$isTileOccupied, model, newVec))) ? A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
 						model,
