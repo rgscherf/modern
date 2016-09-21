@@ -3,6 +3,7 @@ module App exposing (main)
 import Html.App as App
 import Keyboard
 import View
+import Types exposing (..)
 import Main exposing (..)
 import View exposing (..)
 import Char

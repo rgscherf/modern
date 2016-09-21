@@ -9836,15 +9836,48 @@ var _krisajenkins$elm_astar$AStar$straightLineCost = F2(
 	});
 var _krisajenkins$elm_astar$AStar$findPath = _krisajenkins$elm_astar$AStar_Generalised$findPath;
 
-var _shmookey$cmd_extra$Cmd_Extra$message = function (x) {
-	return A3(
-		_elm_lang$core$Task$perform,
-		_elm_lang$core$Basics$identity,
-		_elm_lang$core$Basics$identity,
-		_elm_lang$core$Task$succeed(x));
+var _rgscherf$modern$Types$Model = F7(
+	function (a, b, c, d, e, f, g) {
+		return {config: a, playerShip: b, currentlyHighlightedTile: c, entities: d, enemySpawnCountdown: e, entityId: f, drawZapLine: g};
+	});
+var _rgscherf$modern$Types$Config = F7(
+	function (a, b, c, d, e, f, g) {
+		return {tileSize: a, boardSize: b, randomSeed: c, timeBetweenEnemySpawns: d, chaseDistance: e, numberOfLands: f, playerMovementRange: g};
+	});
+var _rgscherf$modern$Types$InitFlags = function (a) {
+	return {startTime: a};
 };
+var _rgscherf$modern$Types$Entity = F3(
+	function (a, b, c) {
+		return {pos: a, entType: b, entId: c};
+	});
+var _rgscherf$modern$Types$LandEntity = {ctor: 'LandEntity'};
+var _rgscherf$modern$Types$Ship = {ctor: 'Ship'};
+var _rgscherf$modern$Types$Land = {ctor: 'Land'};
+var _rgscherf$modern$Types$Enemy = {ctor: 'Enemy'};
+var _rgscherf$modern$Types$Player = {ctor: 'Player'};
+var _rgscherf$modern$Types$Sea = {ctor: 'Sea'};
+var _rgscherf$modern$Types$ZapVertical = {ctor: 'ZapVertical'};
+var _rgscherf$modern$Types$ZapHorizontal = {ctor: 'ZapHorizontal'};
+var _rgscherf$modern$Types$Zap = function (a) {
+	return {ctor: 'Zap', _0: a};
+};
+var _rgscherf$modern$Types$MoveEnemies = {ctor: 'MoveEnemies'};
+var _rgscherf$modern$Types$SpawnLands = {ctor: 'SpawnLands'};
+var _rgscherf$modern$Types$SpawnEnemy = {ctor: 'SpawnEnemy'};
+var _rgscherf$modern$Types$KeyboardEvent = function (a) {
+	return {ctor: 'KeyboardEvent', _0: a};
+};
+var _rgscherf$modern$Types$CursorEnterTile = function (a) {
+	return {ctor: 'CursorEnterTile', _0: a};
+};
+var _rgscherf$modern$Types$Move = F2(
+	function (a, b) {
+		return {ctor: 'Move', _0: a, _1: b};
+	});
+var _rgscherf$modern$Types$NoOp = {ctor: 'NoOp'};
 
-var _rgscherf$modern$SharedUtils$makeMapCoords = function (boardSize) {
+var _rgscherf$modern$Utils_SharedUtils$makeMapCoords = function (boardSize) {
 	return _elm_lang$core$List$concat(
 		A2(
 			_elm_lang$core$List$map,
@@ -9858,8 +9891,46 @@ var _rgscherf$modern$SharedUtils$makeMapCoords = function (boardSize) {
 			},
 			_elm_lang$core$Native_List.range(0, boardSize)));
 };
-var _rgscherf$modern$SharedUtils_ops = _rgscherf$modern$SharedUtils_ops || {};
-_rgscherf$modern$SharedUtils_ops['!!'] = F2(
+var _rgscherf$modern$Utils_SharedUtils$isTileOccupied = F2(
+	function (model, vec) {
+		return A2(
+			_elm_lang$core$List$member,
+			vec,
+			A2(
+				_elm_lang$core$List$map,
+				function (_) {
+					return _.pos;
+				},
+				model.entities));
+	});
+var _rgscherf$modern$Utils_SharedUtils$tileIsInBounds = F2(
+	function (cfg, v) {
+		return (_elm_lang$core$Native_Utils.cmp(
+			_elm_community$elm_linear_algebra$Math_Vector2$getX(v),
+			0) > 0) && ((_elm_lang$core$Native_Utils.cmp(
+			_elm_community$elm_linear_algebra$Math_Vector2$getX(v),
+			cfg.boardSize) < 0) && ((_elm_lang$core$Native_Utils.cmp(
+			_elm_community$elm_linear_algebra$Math_Vector2$getY(v),
+			0) > 0) && (_elm_lang$core$Native_Utils.cmp(
+			_elm_community$elm_linear_algebra$Math_Vector2$getY(v),
+			cfg.boardSize) < 0)));
+	});
+var _rgscherf$modern$Utils_SharedUtils$freeCoordsOnMap = function (model) {
+	return A2(
+		_elm_lang$core$List$filter,
+		function (a) {
+			return !_elm_lang$core$Native_Utils.eq(a, model.playerShip.pos);
+		},
+		A2(
+			_elm_lang$core$List$filter,
+			function (_p0) {
+				return _elm_lang$core$Basics$not(
+					A2(_rgscherf$modern$Utils_SharedUtils$isTileOccupied, model, _p0));
+			},
+			_rgscherf$modern$Utils_SharedUtils$makeMapCoords(model.config.boardSize)));
+};
+var _rgscherf$modern$Utils_SharedUtils_ops = _rgscherf$modern$Utils_SharedUtils_ops || {};
+_rgscherf$modern$Utils_SharedUtils_ops['!!'] = F2(
 	function (l, ind) {
 		var go = F2(
 			function (l$, ind$) {
@@ -9883,446 +9954,6 @@ _rgscherf$modern$SharedUtils_ops['!!'] = F2(
 		return A2(go, l, ind);
 	});
 
-var _rgscherf$modern$Main$gridMoveCost = F2(
-	function (_p1, _p0) {
-		var _p2 = _p1;
-		var _p3 = _p0;
-		var ydist = _elm_lang$core$Basics$abs(_p2._1 - _p3._1);
-		var xdist = _elm_lang$core$Basics$abs(_p2._0 - _p3._0);
-		return _elm_lang$core$Basics$toFloat(xdist + ydist);
-	});
-var _rgscherf$modern$Main$isTileOccupied = F2(
-	function (model, vec) {
-		return A2(
-			_elm_lang$core$List$member,
-			vec,
-			A2(
-				_elm_lang$core$List$map,
-				function (_) {
-					return _.pos;
-				},
-				model.entities));
-	});
-var _rgscherf$modern$Main$tileIsInBounds = F2(
-	function (cfg, v) {
-		return (_elm_lang$core$Native_Utils.cmp(
-			_elm_community$elm_linear_algebra$Math_Vector2$getX(v),
-			0) > 0) && ((_elm_lang$core$Native_Utils.cmp(
-			_elm_community$elm_linear_algebra$Math_Vector2$getX(v),
-			cfg.boardSize) < 0) && ((_elm_lang$core$Native_Utils.cmp(
-			_elm_community$elm_linear_algebra$Math_Vector2$getY(v),
-			0) > 0) && (_elm_lang$core$Native_Utils.cmp(
-			_elm_community$elm_linear_algebra$Math_Vector2$getY(v),
-			cfg.boardSize) < 0)));
-	});
-var _rgscherf$modern$Main$fromPosition = function (_p4) {
-	var _p5 = _p4;
-	return A2(
-		_elm_community$elm_linear_algebra$Math_Vector2$vec2,
-		_elm_lang$core$Basics$toFloat(_p5._0),
-		_elm_lang$core$Basics$toFloat(_p5._1));
-};
-var _rgscherf$modern$Main$toPosition = function (v) {
-	return function (_p6) {
-		var _p7 = _p6;
-		return {
-			ctor: '_Tuple2',
-			_0: _elm_lang$core$Basics$round(_p7._0),
-			_1: _elm_lang$core$Basics$round(_p7._1)
-		};
-	}(
-		_elm_community$elm_linear_algebra$Math_Vector2$toTuple(v));
-};
-var _rgscherf$modern$Main$movesFrom = F3(
-	function (model, ent, _p8) {
-		var _p9 = _p8;
-		var _p12 = _p9._1;
-		var _p11 = _p9._0;
-		var possibleMoves = _elm_lang$core$Native_List.fromArray(
-			[
-				{ctor: '_Tuple2', _0: _p11 + 1, _1: _p12},
-				{ctor: '_Tuple2', _0: _p11 - 1, _1: _p12},
-				{ctor: '_Tuple2', _0: _p11, _1: _p12 - 1},
-				{ctor: '_Tuple2', _0: _p11, _1: _p12 + 1}
-			]);
-		return _elm_lang$core$Set$fromList(
-			A2(
-				_elm_lang$core$List$map,
-				_rgscherf$modern$Main$toPosition,
-				A2(
-					_elm_lang$core$List$filter,
-					function (_p10) {
-						return _elm_lang$core$Basics$not(
-							A2(_rgscherf$modern$Main$isTileOccupied, model, _p10));
-					},
-					A2(
-						_elm_lang$core$List$filter,
-						_rgscherf$modern$Main$tileIsInBounds(model.config),
-						A2(_elm_lang$core$List$map, _rgscherf$modern$Main$fromPosition, possibleMoves)))));
-	});
-var _rgscherf$modern$Main$getPathTo = F3(
-	function (model, entity, target) {
-		return A4(
-			_krisajenkins$elm_astar$AStar$findPath,
-			_rgscherf$modern$Main$gridMoveCost,
-			A2(_rgscherf$modern$Main$movesFrom, model, entity),
-			_rgscherf$modern$Main$toPosition(entity.pos),
-			_rgscherf$modern$Main$toPosition(target));
-	});
-var _rgscherf$modern$Main$moveSingleEnemy = F2(
-	function (model, entity) {
-		var _p13 = entity.entType;
-		if (_p13.ctor === 'LandEntity') {
-			return entity;
-		} else {
-			var isInChasingDistance = _elm_lang$core$Native_Utils.cmp(
-				A2(_elm_community$elm_linear_algebra$Math_Vector2$distance, entity.pos, model.playerShip.pos),
-				model.config.chaseDistance) < 0;
-			var pathTo = isInChasingDistance ? A3(_rgscherf$modern$Main$getPathTo, model, entity, model.playerShip.pos) : _elm_lang$core$Maybe$Nothing;
-			var newPos = function () {
-				var _p14 = pathTo;
-				if (_p14.ctor === 'Nothing') {
-					return entity.pos;
-				} else {
-					var _p15 = _elm_lang$core$List$head(_p14._0);
-					if (_p15.ctor === 'Nothing') {
-						return entity.pos;
-					} else {
-						var _p16 = _p15._0;
-						return _elm_lang$core$Native_Utils.eq(
-							_rgscherf$modern$Main$fromPosition(_p16),
-							model.playerShip.pos) ? entity.pos : _rgscherf$modern$Main$fromPosition(_p16);
-					}
-				}
-			}();
-			return _elm_lang$core$Native_Utils.update(
-				entity,
-				{pos: newPos});
-		}
-	});
-var _rgscherf$modern$Main$updateEnemies = F3(
-	function (model, updatedEntities, notUpdateEntities) {
-		updateEnemies:
-		while (true) {
-			var _p17 = notUpdateEntities;
-			if (_p17.ctor === '[]') {
-				return updatedEntities;
-			} else {
-				var newModel = _elm_lang$core$Native_Utils.update(
-					model,
-					{
-						entities: A2(_elm_lang$core$Basics_ops['++'], updatedEntities, notUpdateEntities)
-					});
-				var _v9 = newModel,
-					_v10 = A2(
-					_elm_lang$core$List_ops['::'],
-					A2(_rgscherf$modern$Main$moveSingleEnemy, newModel, _p17._0),
-					updatedEntities),
-					_v11 = _p17._1;
-				model = _v9;
-				updatedEntities = _v10;
-				notUpdateEntities = _v11;
-				continue updateEnemies;
-			}
-		}
-	});
-var _rgscherf$modern$Main$freeCoordsOnMap = function (model) {
-	return A2(
-		_elm_lang$core$List$filter,
-		function (a) {
-			return !_elm_lang$core$Native_Utils.eq(a, model.playerShip.pos);
-		},
-		A2(
-			_elm_lang$core$List$filter,
-			function (_p18) {
-				return _elm_lang$core$Basics$not(
-					A2(_rgscherf$modern$Main$isTileOccupied, model, _p18));
-			},
-			_rgscherf$modern$SharedUtils$makeMapCoords(model.config.boardSize)));
-};
-var _rgscherf$modern$Main$initConfig = function (startTime) {
-	return {
-		tileSize: 30,
-		boardSize: 24,
-		randomSeed: _elm_lang$core$Random$initialSeed(startTime),
-		timeBetweenEnemySpawns: 3,
-		chaseDistance: 10,
-		numberOfLands: _elm_lang$core$Basics$round((24 * 24) / 8)
-	};
-};
-var _rgscherf$modern$Main$Config = F6(
-	function (a, b, c, d, e, f) {
-		return {tileSize: a, boardSize: b, randomSeed: c, timeBetweenEnemySpawns: d, chaseDistance: e, numberOfLands: f};
-	});
-var _rgscherf$modern$Main$Model = F7(
-	function (a, b, c, d, e, f, g) {
-		return {config: a, playerShip: b, playerMovementRange: c, currentlyHighlightedTile: d, entities: e, enemySpawnCountdown: f, entityId: g};
-	});
-var _rgscherf$modern$Main$InitFlags = function (a) {
-	return {startTime: a};
-};
-var _rgscherf$modern$Main$Entity = F3(
-	function (a, b, c) {
-		return {pos: a, entType: b, entId: c};
-	});
-var _rgscherf$modern$Main$LandEntity = {ctor: 'LandEntity'};
-var _rgscherf$modern$Main$spawnSingleLand = function (model) {
-	var cfg = model.config;
-	var allfreecoords = _rgscherf$modern$Main$freeCoordsOnMap(model);
-	var generator = A2(
-		_elm_lang$core$Random$int,
-		0,
-		_elm_lang$core$List$length(allfreecoords) - 1);
-	var _p19 = A2(_elm_lang$core$Random$step, generator, model.config.randomSeed);
-	var pickedindex = _p19._0;
-	var newseed = _p19._1;
-	var cfg$ = _elm_lang$core$Native_Utils.update(
-		cfg,
-		{randomSeed: newseed});
-	var newLand = {
-		pos: A2(
-			_elm_lang$core$Maybe$withDefault,
-			A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, 0, 0),
-			A2(_rgscherf$modern$SharedUtils_ops['!!'], allfreecoords, pickedindex)),
-		entType: _rgscherf$modern$Main$LandEntity,
-		entId: model.entityId
-	};
-	return {
-		ctor: '_Tuple2',
-		_0: _elm_lang$core$Native_Utils.update(
-			model,
-			{
-				entities: A2(_elm_lang$core$List_ops['::'], newLand, model.entities),
-				config: cfg$
-			}),
-		_1: newLand
-	};
-};
-var _rgscherf$modern$Main$makeLands = F2(
-	function (model, numSpawnsRemaining) {
-		makeLands:
-		while (true) {
-			var _p20 = numSpawnsRemaining;
-			if (_p20 === 0) {
-				return model;
-			} else {
-				var _p21 = _rgscherf$modern$Main$spawnSingleLand(model);
-				var model$ = _p21._0;
-				var newLand = _p21._1;
-				var _v13 = model$,
-					_v14 = _p20 - 1;
-				model = _v13;
-				numSpawnsRemaining = _v14;
-				continue makeLands;
-			}
-		}
-	});
-var _rgscherf$modern$Main$Ship = {ctor: 'Ship'};
-var _rgscherf$modern$Main$spawnNewEnemy = function (model) {
-	var allfreecoords = _rgscherf$modern$Main$freeCoordsOnMap(model);
-	var generator = A2(
-		_elm_lang$core$Random$int,
-		0,
-		_elm_lang$core$List$length(allfreecoords) - 1);
-	var _p22 = A2(_elm_lang$core$Random$step, generator, model.config.randomSeed);
-	var pickedIndex = _p22._0;
-	var newSeed = _p22._1;
-	var newShipPos = A2(
-		_elm_lang$core$Maybe$withDefault,
-		A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, 0, 0),
-		A2(_rgscherf$modern$SharedUtils_ops['!!'], allfreecoords, pickedIndex));
-	return {
-		ctor: '_Tuple3',
-		_0: {pos: newShipPos, entType: _rgscherf$modern$Main$Ship, entId: model.entityId},
-		_1: newSeed,
-		_2: model.entityId + 1
-	};
-};
-var _rgscherf$modern$Main$Land = {ctor: 'Land'};
-var _rgscherf$modern$Main$Enemy = {ctor: 'Enemy'};
-var _rgscherf$modern$Main$Player = {ctor: 'Player'};
-var _rgscherf$modern$Main$Sea = {ctor: 'Sea'};
-var _rgscherf$modern$Main$MoveEnemies = {ctor: 'MoveEnemies'};
-var _rgscherf$modern$Main$SpawnLands = {ctor: 'SpawnLands'};
-var _rgscherf$modern$Main$init = function (_p23) {
-	var _p24 = _p23;
-	return A2(
-		_elm_lang$core$Platform_Cmd_ops['!'],
-		{
-			config: _rgscherf$modern$Main$initConfig(_p24.startTime),
-			playerShip: A3(
-				_rgscherf$modern$Main$Entity,
-				A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, 0, 0),
-				_rgscherf$modern$Main$Ship,
-				0),
-			playerMovementRange: 2,
-			currentlyHighlightedTile: A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, 0, 0),
-			entities: _elm_lang$core$Native_List.fromArray(
-				[]),
-			enemySpawnCountdown: 3,
-			entityId: 1
-		},
-		_elm_lang$core$Native_List.fromArray(
-			[
-				_shmookey$cmd_extra$Cmd_Extra$message(_rgscherf$modern$Main$SpawnLands)
-			]));
-};
-var _rgscherf$modern$Main$SpawnEnemy = {ctor: 'SpawnEnemy'};
-var _rgscherf$modern$Main$KeyboardEvent = function (a) {
-	return {ctor: 'KeyboardEvent', _0: a};
-};
-var _rgscherf$modern$Main$CursorEnterTile = function (a) {
-	return {ctor: 'CursorEnterTile', _0: a};
-};
-var _rgscherf$modern$Main$Move = F2(
-	function (a, b) {
-		return {ctor: 'Move', _0: a, _1: b};
-	});
-var _rgscherf$modern$Main$update = F2(
-	function (msg, model) {
-		var _p25 = msg;
-		switch (_p25.ctor) {
-			case 'NoOp':
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					model,
-					_elm_lang$core$Native_List.fromArray(
-						[]));
-			case 'MoveEnemies':
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{
-							entities: A3(
-								_rgscherf$modern$Main$updateEnemies,
-								model,
-								_elm_lang$core$Native_List.fromArray(
-									[]),
-								model.entities)
-						}),
-					_elm_lang$core$Native_List.fromArray(
-						[]));
-			case 'Move':
-				var _p27 = _p25._0;
-				var _p26 = _p25._1;
-				var newY = _elm_community$elm_linear_algebra$Math_Vector2$getY(
-					A2(_elm_community$elm_linear_algebra$Math_Vector2$add, _p26, _p27.pos));
-				var newX = _elm_community$elm_linear_algebra$Math_Vector2$getX(
-					A2(_elm_community$elm_linear_algebra$Math_Vector2$add, _p26, _p27.pos));
-				var moveIsInBounds = (_elm_lang$core$Native_Utils.cmp(newX, 0) > -1) && ((_elm_lang$core$Native_Utils.cmp(newX, model.config.boardSize) < 0) && ((_elm_lang$core$Native_Utils.cmp(newY, 0) > -1) && (_elm_lang$core$Native_Utils.cmp(newY, model.config.boardSize) < 0)));
-				var newVec = A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, newX, newY);
-				return (moveIsInBounds && _elm_lang$core$Basics$not(
-					A2(_rgscherf$modern$Main$isTileOccupied, model, newVec))) ? A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{
-							playerShip: A3(_rgscherf$modern$Main$Entity, newVec, _rgscherf$modern$Main$Ship, model.playerShip.entId),
-							enemySpawnCountdown: model.enemySpawnCountdown - 1
-						}),
-					_elm_lang$core$Native_Utils.eq(model.enemySpawnCountdown, 0) ? _elm_lang$core$Native_List.fromArray(
-						[
-							_shmookey$cmd_extra$Cmd_Extra$message(_rgscherf$modern$Main$MoveEnemies),
-							_shmookey$cmd_extra$Cmd_Extra$message(_rgscherf$modern$Main$SpawnEnemy)
-						]) : _elm_lang$core$Native_List.fromArray(
-						[
-							_shmookey$cmd_extra$Cmd_Extra$message(_rgscherf$modern$Main$MoveEnemies)
-						])) : A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					model,
-					_elm_lang$core$Native_List.fromArray(
-						[]));
-			case 'SpawnLands':
-				var model$ = A2(_rgscherf$modern$Main$makeLands, model, model.config.numberOfLands);
-				var cfg = model$.config;
-				var cfg$ = _elm_lang$core$Native_Utils.update(
-					cfg,
-					{randomSeed: model$.config.randomSeed});
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{config: cfg$, entities: model$.entities}),
-					_elm_lang$core$Native_List.fromArray(
-						[]));
-			case 'SpawnEnemy':
-				var config = model.config;
-				var _p28 = _rgscherf$modern$Main$spawnNewEnemy(model);
-				var newShip = _p28._0;
-				var newSeed = _p28._1;
-				var newEntityId = _p28._2;
-				var config$ = _elm_lang$core$Native_Utils.update(
-					config,
-					{randomSeed: newSeed});
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{
-							enemySpawnCountdown: model.config.timeBetweenEnemySpawns,
-							entities: A2(_elm_lang$core$List_ops['::'], newShip, model.entities),
-							config: config$,
-							entityId: newEntityId
-						}),
-					_elm_lang$core$Native_List.fromArray(
-						[]));
-			case 'CursorEnterTile':
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{currentlyHighlightedTile: _p25._0}),
-					_elm_lang$core$Native_List.fromArray(
-						[]));
-			default:
-				var movePlayer = function (v) {
-					return A2(
-						_elm_lang$core$Platform_Cmd_ops['!'],
-						model,
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_shmookey$cmd_extra$Cmd_Extra$message(
-								A2(_rgscherf$modern$Main$Move, model.playerShip, v))
-							]));
-				};
-				var _p29 = _p25._0;
-				switch (_p29.valueOf()) {
-					case 'w':
-						return movePlayer(
-							A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, 0, -1));
-					case 'a':
-						return movePlayer(
-							A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, -1, 0));
-					case 's':
-						return movePlayer(
-							A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, 0, 1));
-					case 'd':
-						return movePlayer(
-							A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, 1, 0));
-					case 'q':
-						return movePlayer(
-							A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, -1, -1));
-					case 'e':
-						return movePlayer(
-							A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, 1, -1));
-					case 'z':
-						return movePlayer(
-							A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, -1, 1));
-					case 'c':
-						return movePlayer(
-							A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, 1, 1));
-					default:
-						return A2(
-							_elm_lang$core$Platform_Cmd_ops['!'],
-							model,
-							_elm_lang$core$Native_List.fromArray(
-								[]));
-				}
-		}
-	});
-var _rgscherf$modern$Main$NoOp = {ctor: 'NoOp'};
-
 var _rgscherf$modern$View$renderPlayer = function (model) {
 	var playerPos$ = _elm_community$elm_linear_algebra$Math_Vector2$toRecord(model.playerShip.pos);
 	return _elm_lang$core$Native_List.fromArray(
@@ -10341,7 +9972,7 @@ var _rgscherf$modern$View$renderPlayer = function (model) {
 					_elm_lang$svg$Svg_Attributes$height(
 					_elm_lang$core$Basics$toString(model.config.tileSize - 5)),
 					_elm_lang$svg$Svg_Events$onMouseOver(
-					_rgscherf$modern$Main$CursorEnterTile(model.playerShip.pos))
+					_rgscherf$modern$Types$CursorEnterTile(model.playerShip.pos))
 				]),
 			_elm_lang$core$Native_List.fromArray(
 				[]))
@@ -10352,7 +9983,7 @@ var _rgscherf$modern$View$makeOneSeaTile = F2(
 		var isHighligtedTile = _elm_lang$core$Native_Utils.eq(model.currentlyHighlightedTile, pos);
 		var isInRange = _elm_lang$core$Native_Utils.cmp(
 			A2(_elm_community$elm_linear_algebra$Math_Vector2$distance, model.playerShip.pos, pos),
-			model.config.tileSize * model.playerMovementRange) < 1;
+			model.config.tileSize * model.config.playerMovementRange) < 1;
 		var highligtedOutOfRangeColor = '#2251dd';
 		var highlightedInRangeColor = 'Salmon';
 		var notHighligtedButInRange = '#4f74e3';
@@ -10373,13 +10004,69 @@ var _rgscherf$modern$View$makeOneSeaTile = F2(
 					_elm_lang$svg$Svg_Attributes$height(
 					_elm_lang$core$Basics$toString(model.config.tileSize)),
 					_elm_lang$svg$Svg_Events$onMouseOver(
-					_rgscherf$modern$Main$CursorEnterTile(pos))
+					_rgscherf$modern$Types$CursorEnterTile(pos))
+				]),
+			_elm_lang$core$Native_List.fromArray(
+				[]));
+	});
+var _rgscherf$modern$View$drawOneLine = F2(
+	function (model, pos) {
+		var halfTile = model.config.tileSize / 2;
+		var screenPos = _elm_community$elm_linear_algebra$Math_Vector2$toRecord(
+			A2(_elm_community$elm_linear_algebra$Math_Vector2$scale, model.config.tileSize, pos));
+		var drawStart = function () {
+			var _p0 = model.drawZapLine;
+			if (_p0.ctor === 'Just') {
+				if (_p0._0.ctor === 'ZapVertical') {
+					return _elm_lang$core$Native_Utils.update(
+						screenPos,
+						{x: screenPos.x + halfTile, y: screenPos.y});
+				} else {
+					return _elm_lang$core$Native_Utils.update(
+						screenPos,
+						{x: screenPos.x, y: screenPos.y + halfTile});
+				}
+			} else {
+				return {x: 0, y: 0};
+			}
+		}();
+		var drawEnd = function () {
+			var _p1 = model.drawZapLine;
+			if (_p1.ctor === 'Just') {
+				if (_p1._0.ctor === 'ZapVertical') {
+					return _elm_lang$core$Native_Utils.update(
+						drawStart,
+						{x: drawStart.x, y: drawStart.y + model.config.tileSize});
+				} else {
+					return _elm_lang$core$Native_Utils.update(
+						drawStart,
+						{x: drawStart.x + model.config.tileSize, y: drawStart.y});
+				}
+			} else {
+				return {x: 0, y: 0};
+			}
+		}();
+		return A2(
+			_elm_lang$svg$Svg$line,
+			_elm_lang$core$Native_List.fromArray(
+				[
+					_elm_lang$svg$Svg_Attributes$fill('blue'),
+					_elm_lang$svg$Svg_Attributes$x1(
+					_elm_lang$core$Basics$toString(drawStart.x)),
+					_elm_lang$svg$Svg_Attributes$y1(
+					_elm_lang$core$Basics$toString(drawStart.y)),
+					_elm_lang$svg$Svg_Attributes$x2(
+					_elm_lang$core$Basics$toString(drawEnd.x)),
+					_elm_lang$svg$Svg_Attributes$y2(
+					_elm_lang$core$Basics$toString(drawEnd.y)),
+					_elm_lang$svg$Svg_Attributes$strokeWidth(
+					_elm_lang$core$Basics$toString(2))
 				]),
 			_elm_lang$core$Native_List.fromArray(
 				[]));
 	});
 var _rgscherf$modern$View$makeMapTiles = function (model) {
-	var boardCoords = _rgscherf$modern$SharedUtils$makeMapCoords(model.config.boardSize);
+	var boardCoords = _rgscherf$modern$Utils_SharedUtils$makeMapCoords(model.config.boardSize);
 	return A2(
 		_elm_lang$core$List$map,
 		_rgscherf$modern$View$makeOneSeaTile(model),
@@ -10388,8 +10075,8 @@ var _rgscherf$modern$View$makeMapTiles = function (model) {
 var _rgscherf$modern$View$renderEntity = F2(
 	function (tileSize, entity) {
 		var tileColor = function () {
-			var _p0 = entity.entType;
-			if (_p0.ctor === 'Ship') {
+			var _p2 = entity.entType;
+			if (_p2.ctor === 'Ship') {
 				return 'Red';
 			} else {
 				return 'Orange';
@@ -10410,7 +10097,7 @@ var _rgscherf$modern$View$renderEntity = F2(
 					_elm_lang$svg$Svg_Attributes$height(
 					_elm_lang$core$Basics$toString(tileSize - 5)),
 					_elm_lang$svg$Svg_Events$onMouseOver(
-					_rgscherf$modern$Main$CursorEnterTile(entity.pos))
+					_rgscherf$modern$Types$CursorEnterTile(entity.pos))
 				]),
 			_elm_lang$core$Native_List.fromArray(
 				[]));
@@ -10419,7 +10106,7 @@ var _rgscherf$modern$View$queryMouseHighlight = F2(
 	function (model, vec) {
 		return _elm_lang$core$Native_Utils.eq(
 			A2(_elm_community$elm_linear_algebra$Math_Vector2$scale, model.config.tileSize, vec),
-			model.playerShip.pos) ? _rgscherf$modern$Main$Player : (A2(
+			model.playerShip.pos) ? _rgscherf$modern$Types$Player : (A2(
 			_elm_lang$core$List$member,
 			A2(_elm_community$elm_linear_algebra$Math_Vector2$scale, model.config.tileSize, vec),
 			A2(
@@ -10427,15 +10114,15 @@ var _rgscherf$modern$View$queryMouseHighlight = F2(
 				function (_) {
 					return _.pos;
 				},
-				model.entities)) ? _rgscherf$modern$Main$Enemy : _rgscherf$modern$Main$Sea);
+				model.entities)) ? _rgscherf$modern$Types$Enemy : _rgscherf$modern$Types$Sea);
 	});
 var _rgscherf$modern$View$MouseInfoDivPackage = F2(
 	function (a, b) {
 		return {headline: a, description: b};
 	});
 var _rgscherf$modern$View$fillMouseInfoDiv = function (terr) {
-	var _p1 = terr;
-	switch (_p1.ctor) {
+	var _p3 = terr;
+	switch (_p3.ctor) {
 		case 'Player':
 			return A2(_rgscherf$modern$View$MouseInfoDivPackage, 'It\'s you!', 'The intrepid trader');
 		case 'Enemy':
@@ -10529,13 +10216,447 @@ var _rgscherf$modern$View$view = function (model) {
 			]));
 };
 
+var _shmookey$cmd_extra$Cmd_Extra$message = function (x) {
+	return A3(
+		_elm_lang$core$Task$perform,
+		_elm_lang$core$Basics$identity,
+		_elm_lang$core$Basics$identity,
+		_elm_lang$core$Task$succeed(x));
+};
+
+var _rgscherf$modern$Utils_Pathfinding$fromPosition = function (_p0) {
+	var _p1 = _p0;
+	return A2(
+		_elm_community$elm_linear_algebra$Math_Vector2$vec2,
+		_elm_lang$core$Basics$toFloat(_p1._0),
+		_elm_lang$core$Basics$toFloat(_p1._1));
+};
+var _rgscherf$modern$Utils_Pathfinding$toPosition = function (v) {
+	return function (_p2) {
+		var _p3 = _p2;
+		return {
+			ctor: '_Tuple2',
+			_0: _elm_lang$core$Basics$round(_p3._0),
+			_1: _elm_lang$core$Basics$round(_p3._1)
+		};
+	}(
+		_elm_community$elm_linear_algebra$Math_Vector2$toTuple(v));
+};
+var _rgscherf$modern$Utils_Pathfinding$movesFrom = F3(
+	function (model, ent, _p4) {
+		var _p5 = _p4;
+		var _p8 = _p5._1;
+		var _p7 = _p5._0;
+		var possibleMoves = _elm_lang$core$Native_List.fromArray(
+			[
+				{ctor: '_Tuple2', _0: _p7 + 1, _1: _p8},
+				{ctor: '_Tuple2', _0: _p7 - 1, _1: _p8},
+				{ctor: '_Tuple2', _0: _p7, _1: _p8 - 1},
+				{ctor: '_Tuple2', _0: _p7, _1: _p8 + 1}
+			]);
+		return _elm_lang$core$Set$fromList(
+			A2(
+				_elm_lang$core$List$map,
+				_rgscherf$modern$Utils_Pathfinding$toPosition,
+				A2(
+					_elm_lang$core$List$filter,
+					function (_p6) {
+						return _elm_lang$core$Basics$not(
+							A2(_rgscherf$modern$Utils_SharedUtils$isTileOccupied, model, _p6));
+					},
+					A2(
+						_elm_lang$core$List$filter,
+						_rgscherf$modern$Utils_SharedUtils$tileIsInBounds(model.config),
+						A2(_elm_lang$core$List$map, _rgscherf$modern$Utils_Pathfinding$fromPosition, possibleMoves)))));
+	});
+var _rgscherf$modern$Utils_Pathfinding$gridMoveCost = F2(
+	function (_p10, _p9) {
+		var _p11 = _p10;
+		var _p12 = _p9;
+		var ydist = _elm_lang$core$Basics$abs(_p11._1 - _p12._1);
+		var xdist = _elm_lang$core$Basics$abs(_p11._0 - _p12._0);
+		return _elm_lang$core$Basics$toFloat(xdist + ydist);
+	});
+var _rgscherf$modern$Utils_Pathfinding$getPathTo = F3(
+	function (model, entity, target) {
+		return A4(
+			_krisajenkins$elm_astar$AStar$findPath,
+			_rgscherf$modern$Utils_Pathfinding$gridMoveCost,
+			A2(_rgscherf$modern$Utils_Pathfinding$movesFrom, model, entity),
+			_rgscherf$modern$Utils_Pathfinding$toPosition(entity.pos),
+			_rgscherf$modern$Utils_Pathfinding$toPosition(target));
+	});
+var _rgscherf$modern$Utils_Pathfinding$moveSingleEnemy = F2(
+	function (model, entity) {
+		var _p13 = entity.entType;
+		if (_p13.ctor === 'LandEntity') {
+			return entity;
+		} else {
+			var isInChasingDistance = _elm_lang$core$Native_Utils.cmp(
+				A2(_elm_community$elm_linear_algebra$Math_Vector2$distance, entity.pos, model.playerShip.pos),
+				model.config.chaseDistance) < 0;
+			var pathTo = isInChasingDistance ? A3(_rgscherf$modern$Utils_Pathfinding$getPathTo, model, entity, model.playerShip.pos) : _elm_lang$core$Maybe$Nothing;
+			var newPos = function () {
+				var _p14 = pathTo;
+				if (_p14.ctor === 'Nothing') {
+					return entity.pos;
+				} else {
+					var _p15 = _elm_lang$core$List$head(_p14._0);
+					if (_p15.ctor === 'Nothing') {
+						return entity.pos;
+					} else {
+						var _p16 = _p15._0;
+						return _elm_lang$core$Native_Utils.eq(
+							_rgscherf$modern$Utils_Pathfinding$fromPosition(_p16),
+							model.playerShip.pos) ? entity.pos : _rgscherf$modern$Utils_Pathfinding$fromPosition(_p16);
+					}
+				}
+			}();
+			return _elm_lang$core$Native_Utils.update(
+				entity,
+				{pos: newPos});
+		}
+	});
+
+var _rgscherf$modern$Utils_MakeIslands$spawnSingleLand = function (model) {
+	var cfg = model.config;
+	var allfreecoords = _rgscherf$modern$Utils_SharedUtils$freeCoordsOnMap(model);
+	var generator = A2(
+		_elm_lang$core$Random$int,
+		0,
+		_elm_lang$core$List$length(allfreecoords) - 1);
+	var _p0 = A2(_elm_lang$core$Random$step, generator, model.config.randomSeed);
+	var pickedindex = _p0._0;
+	var newseed = _p0._1;
+	var cfg$ = _elm_lang$core$Native_Utils.update(
+		cfg,
+		{randomSeed: newseed});
+	var newLand = {
+		pos: A2(
+			_elm_lang$core$Maybe$withDefault,
+			A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, 0, 0),
+			A2(_rgscherf$modern$Utils_SharedUtils_ops['!!'], allfreecoords, pickedindex)),
+		entType: _rgscherf$modern$Types$LandEntity,
+		entId: model.entityId
+	};
+	return {
+		ctor: '_Tuple2',
+		_0: _elm_lang$core$Native_Utils.update(
+			model,
+			{
+				entities: A2(_elm_lang$core$List_ops['::'], newLand, model.entities),
+				config: cfg$
+			}),
+		_1: newLand
+	};
+};
+var _rgscherf$modern$Utils_MakeIslands$makeLands = F2(
+	function (model, numSpawnsRemaining) {
+		makeLands:
+		while (true) {
+			var _p1 = numSpawnsRemaining;
+			if (_p1 === 0) {
+				return model;
+			} else {
+				var _p2 = _rgscherf$modern$Utils_MakeIslands$spawnSingleLand(model);
+				var model$ = _p2._0;
+				var newLand = _p2._1;
+				var _v1 = model$,
+					_v2 = _p1 - 1;
+				model = _v1;
+				numSpawnsRemaining = _v2;
+				continue makeLands;
+			}
+		}
+	});
+
+var _rgscherf$modern$Main$isZapped = F3(
+	function (model, dir, ent) {
+		var _p0 = ent.entType;
+		if (_p0.ctor === 'Ship') {
+			var _p1 = dir;
+			if (_p1.ctor === 'ZapHorizontal') {
+				return _elm_lang$core$Native_Utils.eq(
+					_elm_community$elm_linear_algebra$Math_Vector2$getY(ent.pos),
+					_elm_community$elm_linear_algebra$Math_Vector2$getY(model.playerShip.pos));
+			} else {
+				return _elm_lang$core$Native_Utils.eq(
+					_elm_community$elm_linear_algebra$Math_Vector2$getX(ent.pos),
+					_elm_community$elm_linear_algebra$Math_Vector2$getX(model.playerShip.pos));
+			}
+		} else {
+			return false;
+		}
+	});
+var _rgscherf$modern$Main$updateEnemies = F3(
+	function (model, updatedEntities, notUpdateEntities) {
+		updateEnemies:
+		while (true) {
+			var _p2 = notUpdateEntities;
+			if (_p2.ctor === '[]') {
+				return updatedEntities;
+			} else {
+				var newModel = _elm_lang$core$Native_Utils.update(
+					model,
+					{
+						entities: A2(_elm_lang$core$Basics_ops['++'], updatedEntities, notUpdateEntities)
+					});
+				var _v3 = newModel,
+					_v4 = A2(
+					_elm_lang$core$List_ops['::'],
+					A2(_rgscherf$modern$Utils_Pathfinding$moveSingleEnemy, newModel, _p2._0),
+					updatedEntities),
+					_v5 = _p2._1;
+				model = _v3;
+				updatedEntities = _v4;
+				notUpdateEntities = _v5;
+				continue updateEnemies;
+			}
+		}
+	});
+var _rgscherf$modern$Main$spawnNewEnemy = function (model) {
+	var allfreecoords = _rgscherf$modern$Utils_SharedUtils$freeCoordsOnMap(model);
+	var generator = A2(
+		_elm_lang$core$Random$int,
+		0,
+		_elm_lang$core$List$length(allfreecoords) - 1);
+	var _p3 = A2(_elm_lang$core$Random$step, generator, model.config.randomSeed);
+	var pickedIndex = _p3._0;
+	var newSeed = _p3._1;
+	var newShipPos = A2(
+		_elm_lang$core$Maybe$withDefault,
+		A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, 0, 0),
+		A2(_rgscherf$modern$Utils_SharedUtils_ops['!!'], allfreecoords, pickedIndex));
+	return {
+		ctor: '_Tuple3',
+		_0: {pos: newShipPos, entType: _rgscherf$modern$Types$Ship, entId: model.entityId},
+		_1: newSeed,
+		_2: model.entityId + 1
+	};
+};
+var _rgscherf$modern$Main$update = F2(
+	function (msg, model) {
+		var _p4 = msg;
+		switch (_p4.ctor) {
+			case 'NoOp':
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					model,
+					_elm_lang$core$Native_List.fromArray(
+						[]));
+			case 'MoveEnemies':
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{
+							entities: A3(
+								_rgscherf$modern$Main$updateEnemies,
+								model,
+								_elm_lang$core$Native_List.fromArray(
+									[]),
+								model.entities)
+						}),
+					_elm_lang$core$Native_List.fromArray(
+						[]));
+			case 'Move':
+				var _p6 = _p4._0;
+				var _p5 = _p4._1;
+				var newY = _elm_community$elm_linear_algebra$Math_Vector2$getY(
+					A2(_elm_community$elm_linear_algebra$Math_Vector2$add, _p5, _p6.pos));
+				var newX = _elm_community$elm_linear_algebra$Math_Vector2$getX(
+					A2(_elm_community$elm_linear_algebra$Math_Vector2$add, _p5, _p6.pos));
+				var moveIsInBounds = (_elm_lang$core$Native_Utils.cmp(newX, 0) > -1) && ((_elm_lang$core$Native_Utils.cmp(newX, model.config.boardSize) < 0) && ((_elm_lang$core$Native_Utils.cmp(newY, 0) > -1) && (_elm_lang$core$Native_Utils.cmp(newY, model.config.boardSize) < 0)));
+				var newVec = A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, newX, newY);
+				return (moveIsInBounds && _elm_lang$core$Basics$not(
+					A2(_rgscherf$modern$Utils_SharedUtils$isTileOccupied, model, newVec))) ? A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{
+							playerShip: A3(_rgscherf$modern$Types$Entity, newVec, _rgscherf$modern$Types$Ship, model.playerShip.entId),
+							enemySpawnCountdown: model.enemySpawnCountdown - 1,
+							drawZapLine: _elm_lang$core$Maybe$Nothing
+						}),
+					_elm_lang$core$Native_Utils.eq(model.enemySpawnCountdown, 0) ? _elm_lang$core$Native_List.fromArray(
+						[
+							_shmookey$cmd_extra$Cmd_Extra$message(_rgscherf$modern$Types$MoveEnemies),
+							_shmookey$cmd_extra$Cmd_Extra$message(_rgscherf$modern$Types$SpawnEnemy)
+						]) : _elm_lang$core$Native_List.fromArray(
+						[
+							_shmookey$cmd_extra$Cmd_Extra$message(_rgscherf$modern$Types$MoveEnemies)
+						])) : A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					model,
+					_elm_lang$core$Native_List.fromArray(
+						[]));
+			case 'SpawnLands':
+				var model$ = A2(_rgscherf$modern$Utils_MakeIslands$makeLands, model, model.config.numberOfLands);
+				var cfg = model$.config;
+				var cfg$ = _elm_lang$core$Native_Utils.update(
+					cfg,
+					{randomSeed: model$.config.randomSeed});
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{config: cfg$, entities: model$.entities}),
+					_elm_lang$core$Native_List.fromArray(
+						[]));
+			case 'SpawnEnemy':
+				var config = model.config;
+				var _p7 = _rgscherf$modern$Main$spawnNewEnemy(model);
+				var newShip = _p7._0;
+				var newSeed = _p7._1;
+				var newEntityId = _p7._2;
+				var config$ = _elm_lang$core$Native_Utils.update(
+					config,
+					{randomSeed: newSeed});
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{
+							enemySpawnCountdown: model.config.timeBetweenEnemySpawns,
+							entities: A2(_elm_lang$core$List_ops['::'], newShip, model.entities),
+							config: config$,
+							entityId: newEntityId
+						}),
+					_elm_lang$core$Native_List.fromArray(
+						[]));
+			case 'CursorEnterTile':
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{currentlyHighlightedTile: _p4._0}),
+					_elm_lang$core$Native_List.fromArray(
+						[]));
+			case 'Zap':
+				var _p9 = _p4._0;
+				var filterzapped = A2(
+					_elm_lang$core$List$filter,
+					function (_p8) {
+						return _elm_lang$core$Basics$not(
+							A3(_rgscherf$modern$Main$isZapped, model, _p9, _p8));
+					},
+					model.entities);
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{
+							entities: filterzapped,
+							drawZapLine: _elm_lang$core$Maybe$Just(_p9)
+						}),
+					_elm_lang$core$Native_List.fromArray(
+						[]));
+			default:
+				var zapFromPlayer = function (d) {
+					return A2(
+						_elm_lang$core$Platform_Cmd_ops['!'],
+						model,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_shmookey$cmd_extra$Cmd_Extra$message(
+								_rgscherf$modern$Types$Zap(d))
+							]));
+				};
+				var movePlayer = function (v) {
+					return A2(
+						_elm_lang$core$Platform_Cmd_ops['!'],
+						model,
+						_elm_lang$core$Native_List.fromArray(
+							[
+								_shmookey$cmd_extra$Cmd_Extra$message(
+								A2(_rgscherf$modern$Types$Move, model.playerShip, v))
+							]));
+				};
+				var _p10 = _p4._0;
+				switch (_p10.valueOf()) {
+					case 'w':
+						return movePlayer(
+							A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, 0, -1));
+					case 'a':
+						return movePlayer(
+							A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, -1, 0));
+					case 's':
+						return movePlayer(
+							A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, 0, 1));
+					case 'd':
+						return movePlayer(
+							A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, 1, 0));
+					case 'q':
+						return movePlayer(
+							A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, -1, -1));
+					case 'e':
+						return movePlayer(
+							A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, 1, -1));
+					case 'z':
+						return movePlayer(
+							A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, -1, 1));
+					case 'c':
+						return movePlayer(
+							A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, 1, 1));
+					case 'i':
+						return zapFromPlayer(_rgscherf$modern$Types$ZapVertical);
+					case 'k':
+						return zapFromPlayer(_rgscherf$modern$Types$ZapVertical);
+					case 'j':
+						return zapFromPlayer(_rgscherf$modern$Types$ZapHorizontal);
+					case 'l':
+						return zapFromPlayer(_rgscherf$modern$Types$ZapHorizontal);
+					default:
+						return A2(
+							_elm_lang$core$Platform_Cmd_ops['!'],
+							model,
+							_elm_lang$core$Native_List.fromArray(
+								[]));
+				}
+		}
+	});
+var _rgscherf$modern$Main$initConfig = function (startTime) {
+	return {
+		tileSize: 30,
+		boardSize: 24,
+		randomSeed: _elm_lang$core$Random$initialSeed(startTime),
+		timeBetweenEnemySpawns: 3,
+		chaseDistance: 10,
+		numberOfLands: _elm_lang$core$Basics$round((24 * 24) / 8),
+		playerMovementRange: 2
+	};
+};
+var _rgscherf$modern$Main$init = function (_p11) {
+	var _p12 = _p11;
+	return A2(
+		_elm_lang$core$Platform_Cmd_ops['!'],
+		{
+			config: _rgscherf$modern$Main$initConfig(_p12.startTime),
+			playerShip: A3(
+				_rgscherf$modern$Types$Entity,
+				A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, 0, 0),
+				_rgscherf$modern$Types$Ship,
+				0),
+			currentlyHighlightedTile: A2(_elm_community$elm_linear_algebra$Math_Vector2$vec2, 0, 0),
+			entities: _elm_lang$core$Native_List.fromArray(
+				[]),
+			enemySpawnCountdown: 3,
+			entityId: 1,
+			drawZapLine: _elm_lang$core$Maybe$Nothing
+		},
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_shmookey$cmd_extra$Cmd_Extra$message(_rgscherf$modern$Types$SpawnLands)
+			]));
+};
+
 var _rgscherf$modern$App$subscriptions = function (_p0) {
 	return _elm_lang$core$Platform_Sub$batch(
 		_elm_lang$core$Native_List.fromArray(
 			[
 				_elm_lang$keyboard$Keyboard$presses(
 				function (k) {
-					return _rgscherf$modern$Main$KeyboardEvent(
+					return _rgscherf$modern$Types$KeyboardEvent(
 						_elm_lang$core$Char$fromCode(k));
 				})
 			]));

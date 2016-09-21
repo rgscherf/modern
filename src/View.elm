@@ -1,8 +1,8 @@
 module View exposing (view)
 
-import Main exposing (..)
+import Types exposing (..)
 import Math.Vector2 as V exposing (Vec2)
-import SharedUtils exposing (..)
+import Utils.SharedUtils exposing (..)
 import Html exposing (Html)
 import Html.Attributes as HA
 import Svg exposing (..)
@@ -103,6 +103,49 @@ makeMapTiles model =
         List.map (makeOneSeaTile model) boardCoords
 
 
+drawOneLine : Model -> Vec2 -> Svg a
+drawOneLine model pos =
+    let
+        screenPos =
+            V.scale model.config.tileSize pos
+                |> V.toRecord
+
+        halfTile =
+            model.config.tileSize / 2
+
+        drawStart =
+            case model.drawZapLine of
+                Just ZapVertical ->
+                    { screenPos | x = screenPos.x + halfTile, y = screenPos.y }
+
+                Just ZapHorizontal ->
+                    { screenPos | x = screenPos.x, y = screenPos.y + halfTile }
+
+                Nothing ->
+                    { x = 0, y = 0 }
+
+        drawEnd =
+            case model.drawZapLine of
+                Just ZapVertical ->
+                    { drawStart | x = drawStart.x, y = drawStart.y + model.config.tileSize }
+
+                Just ZapHorizontal ->
+                    { drawStart | x = drawStart.x + model.config.tileSize, y = drawStart.y }
+
+                Nothing ->
+                    { x = 0, y = 0 }
+    in
+        Svg.line
+            [ fill "blue"
+            , x1 <| toString drawStart.x
+            , y1 <| toString drawStart.y
+            , x2 <| toString drawEnd.x
+            , y2 <| toString drawEnd.y
+            , strokeWidth <| toString 2
+            ]
+            []
+
+
 makeOneSeaTile : Model -> Vec2 -> Svg Msg
 makeOneSeaTile model pos =
     let
@@ -124,7 +167,7 @@ makeOneSeaTile model pos =
             "#2251dd"
 
         isInRange =
-            V.distance model.playerShip.pos pos <= (model.config.tileSize * model.playerMovementRange)
+            V.distance model.playerShip.pos pos <= (model.config.tileSize * model.config.playerMovementRange)
 
         isHighligtedTile =
             model.currentlyHighlightedTile == pos

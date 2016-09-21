@@ -4,6 +4,17 @@ import Math.Vector2 exposing (Vec2)
 import Random exposing (Seed)
 
 
+type alias Model =
+    { config : Config
+    , playerShip : Entity
+    , currentlyHighlightedTile : Vec2
+    , entities : List Entity
+    , enemySpawnCountdown : Int
+    , entityId : Int
+    , drawZapLine : Maybe ZapDirection
+    }
+
+
 type alias Config =
     { tileSize : Float
     , boardSize : Float
@@ -11,17 +22,7 @@ type alias Config =
     , timeBetweenEnemySpawns : Int
     , chaseDistance : Float
     , numberOfLands : Int
-    }
-
-
-type alias Model =
-    { config : Config
-    , playerShip : Entity
     , playerMovementRange : Float
-    , currentlyHighlightedTile : Vec2
-    , entities : List Entity
-    , enemySpawnCountdown : Int
-    , entityId : Int
     }
 
 
@@ -48,6 +49,11 @@ type TerrainType
     | Land
 
 
+type ZapDirection
+    = ZapHorizontal
+    | ZapVertical
+
+
 type Msg
     = NoOp
     | Move Entity Vec2
@@ -56,3 +62,4 @@ type Msg
     | SpawnEnemy
     | SpawnLands
     | MoveEnemies
+    | Zap ZapDirection

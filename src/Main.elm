@@ -18,11 +18,11 @@ init : InitFlags -> ( Model, Cmd Msg )
 init { startTime } =
     { config = initConfig startTime
     , playerShip = Entity (V.vec2 0 0) Ship 0
-    , playerMovementRange = 2
     , currentlyHighlightedTile = V.vec2 0 0
     , entities = []
     , enemySpawnCountdown = 3
     , entityId = 1
+    , drawZapLine = Nothing
     }
         ! [ C.message SpawnLands ]
 
@@ -35,6 +35,7 @@ initConfig startTime =
     , timeBetweenEnemySpawns = 3
     , chaseDistance = 10
     , numberOfLands = round <| (24 * 24) / 8
+    , playerMovementRange = 2
     }
 
 
@@ -85,6 +86,21 @@ updateEnemies model updatedEntities notUpdateEntities =
                     xs
 
 
+isZapped : Model -> ZapDirection -> Entity -> Bool
+isZapped model dir ent =
+    case ent.entType of
+        Ship ->
+            case dir of
+                ZapHorizontal ->
+                    V.getY ent.pos == V.getY model.playerShip.pos
+
+                ZapVertical ->
+                    V.getX ent.pos == V.getX model.playerShip.pos
+
+        LandEntity ->
+            False
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -121,6 +137,7 @@ update msg model =
                     { model
                         | playerShip = Entity newVec Ship model.playerShip.entId
                         , enemySpawnCountdown = model.enemySpawnCountdown - 1
+                        , drawZapLine = Nothing
                     }
                         ! (if model.enemySpawnCountdown == 0 then
                             [ C.message MoveEnemies
@@ -168,10 +185,24 @@ update msg model =
             { model | currentlyHighlightedTile = vec }
                 ! []
 
+        Zap dir ->
+            let
+                filterzapped =
+                    List.filter (not << isZapped model dir) model.entities
+            in
+                { model
+                    | entities = filterzapped
+                    , drawZapLine = Just dir
+                }
+                    ! []
+
         KeyboardEvent char ->
             let
                 movePlayer v =
                     model ! [ C.message <| Move model.playerShip v ]
+
+                zapFromPlayer d =
+                    model ! [ C.message <| Zap d ]
             in
                 case char of
                     'w' ->
@@ -197,6 +228,18 @@ update msg model =
 
                     'c' ->
                         movePlayer <| V.vec2 1 1
+
+                    'i' ->
+                        zapFromPlayer ZapVertical
+
+                    'k' ->
+                        zapFromPlayer ZapVertical
+
+                    'j' ->
+                        zapFromPlayer ZapHorizontal
+
+                    'l' ->
+                        zapFromPlayer ZapHorizontal
 
                     _ ->
                         model ! []
