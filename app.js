@@ -9929,6 +9929,14 @@ var _rgscherf$modern$Utils_SharedUtils$freeCoordsOnMap = function (model) {
 			},
 			_rgscherf$modern$Utils_SharedUtils$makeMapCoords(model.config.boardSize)));
 };
+var _rgscherf$modern$Utils_SharedUtils$vequals = F2(
+	function (v1, v2) {
+		return _elm_lang$core$Native_Utils.eq(
+			_elm_community$elm_linear_algebra$Math_Vector2$getX(v1),
+			_elm_community$elm_linear_algebra$Math_Vector2$getX(v2)) && _elm_lang$core$Native_Utils.eq(
+			_elm_community$elm_linear_algebra$Math_Vector2$getY(v1),
+			_elm_community$elm_linear_algebra$Math_Vector2$getY(v2));
+	});
 var _rgscherf$modern$Utils_SharedUtils_ops = _rgscherf$modern$Utils_SharedUtils_ops || {};
 _rgscherf$modern$Utils_SharedUtils_ops['!!'] = F2(
 	function (l, ind) {
@@ -10050,7 +10058,7 @@ var _rgscherf$modern$View$drawOneLine = F2(
 			_elm_lang$svg$Svg$line,
 			_elm_lang$core$Native_List.fromArray(
 				[
-					_elm_lang$svg$Svg_Attributes$fill('blue'),
+					_elm_lang$svg$Svg_Attributes$stroke('blue'),
 					_elm_lang$svg$Svg_Attributes$x1(
 					_elm_lang$core$Basics$toString(drawStart.x)),
 					_elm_lang$svg$Svg_Attributes$y1(
@@ -10065,6 +10073,49 @@ var _rgscherf$modern$View$drawOneLine = F2(
 			_elm_lang$core$Native_List.fromArray(
 				[]));
 	});
+var _rgscherf$modern$View$renderLinedTiles = function (model) {
+	var vertTiles = A2(
+		_elm_lang$core$List$map,
+		function (y) {
+			return A2(
+				_elm_community$elm_linear_algebra$Math_Vector2$vec2,
+				_elm_community$elm_linear_algebra$Math_Vector2$getX(model.playerShip.pos),
+				y);
+		},
+		_elm_lang$core$Native_List.range(0, model.config.boardSize));
+	var horizTiles = A2(
+		_elm_lang$core$List$map,
+		function (x) {
+			return A2(
+				_elm_community$elm_linear_algebra$Math_Vector2$vec2,
+				x,
+				_elm_community$elm_linear_algebra$Math_Vector2$getY(model.playerShip.pos));
+		},
+		_elm_lang$core$Native_List.range(0, model.config.boardSize));
+	var _p2 = model.drawZapLine;
+	if (_p2.ctor === 'Nothing') {
+		return _elm_lang$core$Native_List.fromArray(
+			[]);
+	} else {
+		return A2(
+			_elm_lang$core$List$map,
+			_rgscherf$modern$View$drawOneLine(model),
+			A2(
+				_elm_lang$core$List$filter,
+				function (_p3) {
+					return _elm_lang$core$Basics$not(
+						A2(_rgscherf$modern$Utils_SharedUtils$vequals, model.playerShip.pos, _p3));
+				},
+				function () {
+					var _p4 = _p2._0;
+					if (_p4.ctor === 'ZapHorizontal') {
+						return horizTiles;
+					} else {
+						return vertTiles;
+					}
+				}()));
+	}
+};
 var _rgscherf$modern$View$makeMapTiles = function (model) {
 	var boardCoords = _rgscherf$modern$Utils_SharedUtils$makeMapCoords(model.config.boardSize);
 	return A2(
@@ -10075,8 +10126,8 @@ var _rgscherf$modern$View$makeMapTiles = function (model) {
 var _rgscherf$modern$View$renderEntity = F2(
 	function (tileSize, entity) {
 		var tileColor = function () {
-			var _p2 = entity.entType;
-			if (_p2.ctor === 'Ship') {
+			var _p5 = entity.entType;
+			if (_p5.ctor === 'Ship') {
 				return 'Red';
 			} else {
 				return 'Orange';
@@ -10121,8 +10172,8 @@ var _rgscherf$modern$View$MouseInfoDivPackage = F2(
 		return {headline: a, description: b};
 	});
 var _rgscherf$modern$View$fillMouseInfoDiv = function (terr) {
-	var _p3 = terr;
-	switch (_p3.ctor) {
+	var _p6 = terr;
+	switch (_p6.ctor) {
 		case 'Player':
 			return A2(_rgscherf$modern$View$MouseInfoDivPackage, 'It\'s you!', 'The intrepid trader');
 		case 'Enemy':
@@ -10172,7 +10223,10 @@ var _rgscherf$modern$View$view = function (model) {
 									_elm_lang$core$List$map,
 									_rgscherf$modern$View$renderEntity(model.config.tileSize),
 									model.entities),
-								_rgscherf$modern$View$renderPlayer(model)))),
+								A2(
+									_elm_lang$core$Basics_ops['++'],
+									_rgscherf$modern$View$renderPlayer(model),
+									_rgscherf$modern$View$renderLinedTiles(model))))),
 						A2(
 						_elm_lang$html$Html$div,
 						_elm_lang$core$Native_List.fromArray(

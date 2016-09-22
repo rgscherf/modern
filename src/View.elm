@@ -59,6 +59,7 @@ view model =
                     (makeMapTiles model)
                         ++ (List.map (renderEntity model.config.tileSize) model.entities)
                         ++ (renderPlayer model)
+                        ++ (renderLinedTiles model)
                 , Html.div
                     [ HA.style [ ( "width", "400px" ), ( "background", "LightSlateGrey" ) ] ]
                     [ Html.h1 [] [ text <| mouseDivPackage.headline ]
@@ -103,6 +104,31 @@ makeMapTiles model =
         List.map (makeOneSeaTile model) boardCoords
 
 
+renderLinedTiles : Model -> List (Svg a)
+renderLinedTiles model =
+    let
+        horizTiles =
+            List.map (\x -> V.vec2 x (V.getY model.playerShip.pos)) [0..model.config.boardSize]
+
+        vertTiles =
+            List.map (\y -> V.vec2 (V.getX model.playerShip.pos) y) [0..model.config.boardSize]
+    in
+        case model.drawZapLine of
+            Nothing ->
+                []
+
+            Just dir ->
+                (case dir of
+                    ZapHorizontal ->
+                        horizTiles
+
+                    ZapVertical ->
+                        vertTiles
+                )
+                    |> List.filter (not << vequals model.playerShip.pos)
+                    |> List.map (drawOneLine model)
+
+
 drawOneLine : Model -> Vec2 -> Svg a
 drawOneLine model pos =
     let
@@ -136,12 +162,12 @@ drawOneLine model pos =
                     { x = 0, y = 0 }
     in
         Svg.line
-            [ fill "blue"
+            [ stroke "blue"
             , x1 <| toString drawStart.x
             , y1 <| toString drawStart.y
             , x2 <| toString drawEnd.x
             , y2 <| toString drawEnd.y
-            , strokeWidth <| toString 2
+            , strokeWidth <| toString 5
             ]
             []
 

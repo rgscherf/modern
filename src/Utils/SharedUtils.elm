@@ -17,6 +17,11 @@ import Types exposing (..)
 infixr 1 !!
 
 
+vequals : Vec2 -> Vec2 -> Bool
+vequals v1 v2 =
+    (V.getX v1 == V.getX v2) && (V.getY v1 == V.getY v2)
+
+
 freeCoordsOnMap : Model -> List Vec2
 freeCoordsOnMap model =
     -- list of free coordinates
